@@ -1,8 +1,11 @@
-"""Animated zonecraft logo: a pixel crab in a gas mask stands in a hazy Zone at dusk (ruined plant, a warning sign,
-a pulsing anomaly). It breathes through its filter, its goggles glint, the anomaly flares and the crab hops.
+"""Animated zonecraft logo: a pixel crab in a gas mask sits by a campfire in a hazy Zone at dusk (ruined plant, a
+warning sign, a pulsing anomaly), roasting a sausage on a stick. The fire flickers and throws sparks, the crab breathes
+through its filter, its goggles glint, and when the anomaly flares the crab jumps.
 Pure Python (no Pillow): draws frames on a small pixel grid, scales them up and writes a looping GIF.
 
 usage: py -I make_logo.py <out.gif> [frame,frame,...]   (frame list: write those frames as stills for preview)
+       py -I make_logo.py <out.png>                     (the plugin icon)
+       py -I make_logo.py <out.ts>                      (the panel's campfire scene, hooks/clawd.ts)
 """
 import math
 import sys
@@ -27,12 +30,22 @@ PALETTE = [
     0x8f8b82,  # 13 breath puff
     0x7dd3fc,  # 14 anomaly
     0x000000,  # 15 transparent (rounded corners)
+    0xffd166,  # 16 flame core
+    0xf97316,  # 17 flame
+    0xb91c1c,  # 18 embers
+    0x6b4423,  # 19 log
+    0x3f2817,  # 20 log shade
+    0x4a3426,  # 21 firelight on the ground
+    0xc2410c,  # 22 sausage
 ]
+PALETTE += [0x000000] * (32 - len(PALETTE))     # the GIF's color table holds 32
 TRANSPARENT = 15
 (BG, CRAB, SHADE, MASK, MASK2, LENS, LENS_DIM, RUIN, TITLE, SUB, FLOOR, SUN, WARN, PUFF, ANOM) = range(15)
+FLAME_HI, FLAME, EMBER, LOG, LOG_SHADE, GLOW, SAUSAGE = range(16, 23)
 
 FLOOR_Y = 42
-CX, CY = 6, 24                  # crab origin
+CX, CY = 4, FLOOR_Y - 16        # crab origin (sitting: body on the ground)
+FIRE_X = 36                     # campfire's left edge
 ANOM_C = (63, 35)
 
 GLYPHS = {
@@ -59,19 +72,19 @@ SMALL = {
 }
 
 
-def blank():
-    return [[BG] * W for _ in range(H)]
+def blank(w=None, h=None):
+    return [[BG] * (w or W) for _ in range(h or H)]
 
 
 def px(f, x, y, c):
     x, y = int(round(x)), int(round(y))
-    if 0 <= x < W and 0 <= y < H:
+    if 0 <= x < len(f[0]) and 0 <= y < len(f):
         f[y][x] = c
 
 
 def rect(f, x, y, w, h, c):
-    for yy in range(max(0, y), min(H, y + h)):
-        for xx in range(max(0, x), min(W, x + w)):
+    for yy in range(max(0, y), min(len(f), y + h)):
+        for xx in range(max(0, x), min(len(f[0]), x + w)):
             f[yy][xx] = c
 
 
@@ -110,13 +123,14 @@ def backdrop(f, anomaly_r, flare):
     for y in (6, 10, 14):
         rect(f, 57, y, 3, 2, SHADE)
     rect(f, 56, 6, 5, 1, MASK2)
-    rect(f, 4, FLOOR_Y, 68, 1, FLOOR)
-    # warning sign on a post: yellow triangle with a dark "!"
-    rect(f, 44, 35, 1, 7, MASK2)
+    rect(f, 4, FLOOR_Y, 76, 1, FLOOR)
+    # warning sign on a post past the plant: yellow triangle with a dark "!"
+    sx = 76
+    rect(f, sx, 35, 1, 7, MASK2)
     for row in range(6):
-        rect(f, 44 - row, 29 + row, 1 + 2 * row, 1, WARN)
-    rect(f, 44, 31, 1, 2, BG)
-    px(f, 44, 34, BG)
+        rect(f, sx - row, 29 + row, 1 + 2 * row, 1, WARN)
+    rect(f, sx, 31, 1, 2, BG)
+    px(f, sx, 34, BG)
     # anomaly: a pulsing ring of light just above the ground, sparks when it flares
     ax, ay = ANOM_C
     for k in range(28):
@@ -129,16 +143,21 @@ def backdrop(f, anomaly_r, flare):
             px(f, ax + (anomaly_r + 3) * math.cos(a), ay + 0.75 * (anomaly_r + 3) * math.sin(a), TITLE)
 
 
-# ---- the crab in a gas mask ---------------------------------------------------------------------------------
-def crab(f, dy=0, lens=LENS, glint=None):
+# ---- the crab in a gas mask, sitting by its campfire ----------------------------------------------------------
+def crab(f, dy=0, lens=LENS, glint=None, sitting=True):
     def cell(cx, cy, cw, ch, c=CRAB):
         rect(f, CX + cx * 2, CY + dy + cy * 2, cw * 2, ch * 2, c)
     cell(3, 0, 8, 7)                                     # head + body
     cell(1, 3, 2, 2)                                     # arms
     cell(11, 3, 2, 2)
-    for lx in (3, 5, 8, 10):                             # legs
-        cell(lx, 7, 1, 2)
     ox, oy = CX, CY + dy
+    if sitting:                                          # feet stuck out on the ground to both sides
+        for fx in (2, 20):
+            rect(f, ox + fx, oy + 14, 6, 1, CRAB)
+            rect(f, ox + fx, oy + 15, 6, 1, SHADE)
+    else:
+        for lx in (3, 5, 8, 10):                         # legs
+            cell(lx, 7, 1, 2)
     rect(f, ox + 6, oy + 4, 16, 1, MASK)                 # head strap
     rect(f, ox + 7, oy + 1, 14, 8, MASK)                 # rubber face plate
     for x, y in ((7, 1), (20, 1), (7, 8), (20, 8)):
@@ -158,7 +177,51 @@ def crab(f, dy=0, lens=LENS, glint=None):
     rect(f, ox + 12, oy + 15, 4, 1, MASK)
 
 
+# Flames, 7 wide and 8 tall, one per flicker step: y = core, o = flame, r = embers at the base.
+FLAMES = [
+    ["   o   ", "  oo   ", "  ooo o", " ooyoo ", " oyyyo ", "ooyyyoo", "oyyyyyo", " ryyyr "],
+    ["    o  ", "   oo  ", " o ooo ", " ooyoo ", " oyyyoo", "ooyyyyo", "oyyyyyo", " ryyyr "],
+    ["  o    ", "  o  o ", " ooo o ", " oyoo  ", "ooyyyo ", "oyyyyoo", "oyyyyyo", " ryyyr "],
+    ["   o   ", " o oo  ", " oooo  ", " ooyoo ", "ooyyyo ", "oyyyyyo", "oyyyyyo", " ryyyr "],
+]
+FLAME_COLOR = {"y": FLAME_HI, "o": FLAME, "r": EMBER}
+
+
+def campfire(f, x0, floor, step, sparks=True):
+    """A campfire whose left edge is x0, its logs on the two rows above `floor`; `step` picks the flicker."""
+    rect(f, x0 - 4, floor, 17, 1, GLOW)                  # firelight on the ground around it
+    rect(f, x0, floor - 2, 9, 1, LOG)                    # two crossed logs
+    rect(f, x0 + 1, floor - 1, 7, 1, LOG_SHADE)
+    px(f, x0, floor - 1, LOG)
+    px(f, x0 + 8, floor - 1, LOG)
+    px(f, x0 + 3, floor - 1, EMBER)
+    px(f, x0 + 5, floor - 1, EMBER)
+    for gy, line in enumerate(FLAMES[step % len(FLAMES)]):
+        for gx, ch in enumerate(line):
+            if ch != " ":
+                px(f, x0 + 1 + gx, floor - 10 + gy, FLAME_COLOR[ch])
+    if sparks:                                           # sparks drifting up out of the flames
+        for k, (sx, rise) in enumerate(((3, 2), (6, 4), (2, 6))):
+            h = (step * 2 + rise + k * 3) % 8
+            if h < 6:
+                px(f, x0 + sx + h // 3, floor - 11 - h, FLAME_HI if h < 3 else FLAME)
+
+
+def stick(f, x0, floor, dy=0, step=0):
+    """A stick from the crab's fire-side arm out over the flames, a sausage on its end."""
+    ax, ay = CX + 26, CY + dy + 8
+    tx, ty = x0 + 1, floor - 13 + (step // 2) % 2
+    n = max(abs(tx - ax), abs(ty - ay), 1)
+    for k in range(n + 1):
+        px(f, ax + (tx - ax) * k / n, ay + (ty - ay) * k / n, LOG)
+    rect(f, tx + 1, ty - 1, 5, 2, SAUSAGE)               # skewered on the tip, rounded ends, a scorch mark
+    px(f, tx + 1, ty - 1, BG)
+    px(f, tx + 5, ty - 1, BG)
+    px(f, tx + 3, ty, EMBER)
+
+
 def corners(f, r=4):
+    H, W = len(f), len(f[0])
     for y in range(H):
         for x in range(W):
             cx = r if x < r else (W - 1 - r if x >= W - r else x)
@@ -167,10 +230,12 @@ def corners(f, r=4):
                 f[y][x] = TRANSPARENT
 
 
-def scene(t, dy=0, lens=LENS, glint=None, puffs=(), anomaly_r=3.0, flare=False):
+def scene(t, dy=0, lens=LENS, glint=None, puffs=(), anomaly_r=3.0, flare=False, fire=0):
     f = blank()
     backdrop(f, anomaly_r, flare)
+    campfire(f, FIRE_X, FLOOR_Y, fire)
     crab(f, dy, lens, glint)
+    stick(f, FIRE_X, FLOOR_Y, dy, fire)
     for x, y, c in puffs:
         px(f, x, y + dy, c)
     text(f, "zonecraft", 84, 17, TITLE)
@@ -199,22 +264,68 @@ def breath(step):
 
 def frames():
     out = []   # (frame, delay in 1/100 s)
-    n = 0
-    for cycle in range(3):                               # three calm breaths
+    n = fire = 0
+
+    def add(delay, **kw):
+        nonlocal fire
+        out.append((scene(n, fire=fire, **kw), delay))
+        fire += 1
+    for cycle in range(3):                               # three calm breaths by the fire
         for k in range(12):
-            r = 3.0 + 0.8 * math.sin((n + k) * 0.6)
-            dy = 1 if (k // 3) % 2 else 0
             glint = (k - 6) if (cycle == 1 and 6 <= k <= 8) else None
-            out.append((scene(n, dy=dy, glint=glint, puffs=breath(k - 3 if k >= 3 else None), anomaly_r=r), 9))
+            add(9, glint=glint, puffs=breath(k - 3 if k >= 3 else None), anomaly_r=3.0 + 0.8 * math.sin((n + k) * 0.6))
         n += 12
     for k, r in enumerate((4.5, 6.0, 7.5, 8.5)):         # the anomaly flares...
-        out.append((scene(n, lens=LENS if k % 2 else LENS_DIM, anomaly_r=r, flare=k >= 1), 6))
-    for dy in (-2, -4, -4, -2, 0):                        # ...and the crab hops
-        out.append((scene(n, dy=dy, anomaly_r=5.0, flare=dy == -4), 6))
-    for k in range(6):                                    # settles, breathing hard
-        out.append((scene(n, dy=k % 2, puffs=breath(k + 1), anomaly_r=3.0 + 0.5 * (k % 2)), 8))
-    out.append((scene(n, anomaly_r=3.0), 60))
+        add(6, lens=LENS if k % 2 else LENS_DIM, anomaly_r=r, flare=k >= 1)
+    for dy in (-2, -3, -2, 0):                           # ...and the crab jumps where it sits
+        add(6, dy=dy, anomaly_r=5.0, flare=dy == -3)
+    for k in range(6):                                   # settles back, breathing hard
+        add(8, puffs=breath(k + 1), anomaly_r=3.0 + 0.5 * (k % 2))
+    for k in range(5):                                   # and watches the fire
+        add(12, anomaly_r=3.0)
     return out
+
+
+# ---- the panel's scene: the crab and its campfire alone ------------------------------------------------------
+BADGE_W, BADGE_H, BADGE_FLOOR = 46, 26, 22
+
+
+def badge(step):
+    """The panel's top-right scene: the crab sitting by its fire under a few stars, flicker step `step`."""
+    global CX, CY
+    keep = CX, CY
+    CX, CY = 1, BADGE_FLOOR - 16
+    f = blank(BADGE_W, BADGE_H)
+    for x, y in ((6, 3), (17, 2), (30, 4), (41, 2), (24, 1)):
+        px(f, x, y, TITLE if (x + step) % 4 == 0 else SUB)
+    rect(f, 0, BADGE_FLOOR, BADGE_W, 1, FLOOR)
+    campfire(f, 33, BADGE_FLOOR, step)
+    crab(f)
+    stick(f, 33, BADGE_FLOOR, 0, step)
+    corners(f, 3)
+    CX, CY = keep
+    return f
+
+
+def write_ts(path, steps=4):
+    """The panel's scene as TypeScript data: the palette and each flicker step's rows, one character per pixel
+    (base-32 palette index, '.' transparent)."""
+    digits = "0123456789abcdefghijklmnopqrstuv"
+    lines = ["// Generated by assets/make_logo.py (py -I assets/make_logo.py hooks/clawd.ts); do not edit by hand.",
+             "// The zonecraft crab sitting by its campfire, drawn at the top right of the panel.",
+             f"export const W = {BADGE_W}",
+             f"export const H = {BADGE_H}",
+             "export const PALETTE: readonly string[] = [",
+             "  " + ", ".join(f"'#{c:06x}'" for c in PALETTE[:SAUSAGE + 1]) + ",",
+             "]",
+             "export const FRAMES: readonly (readonly string[])[] = ["]
+    for step in range(steps):
+        lines.append("  [")
+        lines += ["    '" + "".join("." if c == TRANSPARENT else digits[c] for c in row) + "'," for row in badge(step)]
+        lines.append("  ],")
+    lines.append("]")
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
+        fh.write("\n".join(lines) + "\n")
 
 
 # ---- GIF writer ---------------------------------------------------------------------------------------------
@@ -278,15 +389,15 @@ def write_gif(path, seq):
     w, h = W * SCALE, H * SCALE
     g = bytearray(b"GIF89a")
     g += w.to_bytes(2, "little") + h.to_bytes(2, "little")
-    g += bytes([0xB3, 0, 0])                       # global table, 16 colors
+    g += bytes([0xB4, 0, 0])                       # global table, 32 colors
     for c in PALETTE:
         g += bytes([(c >> 16) & 0xFF, (c >> 8) & 0xFF, c & 0xFF])
     g += b"\x21\xFF\x0BNETSCAPE2.0\x03\x01\x00\x00\x00"   # loop forever
     for f, delay in seq:
         g += b"\x21\xF9\x04" + bytes([0x05]) + delay.to_bytes(2, "little") + bytes([TRANSPARENT, 0])
         g += b"\x2C" + (0).to_bytes(2, "little") * 2 + w.to_bytes(2, "little") + h.to_bytes(2, "little") + b"\x00"
-        g += bytes([4])
-        data = lzw(scaled(f), 4)
+        g += bytes([5])
+        data = lzw(scaled(f), 5)
         for i in range(0, len(data), 255):
             chunk = data[i:i + 255]
             g += bytes([len(chunk)]) + chunk
@@ -297,12 +408,13 @@ def write_gif(path, seq):
 
 
 def write_icon(path, size=64, scale=8):
-    """Square PNG (size*scale px): the masked crab in front of the plant's stack, for the plugin listing."""
+    """Square PNG (size*scale px): the masked crab by its campfire in front of the plant's stack, for the plugin
+    listing."""
     import struct
     import zlib
     global W, H, CX, CY
     W, H = size, size
-    CX, CY = 18, 30
+    CX, CY = 2, 50 - 16
     f = blank()
     rect(f, 39, 6, 5, 36, MASK2)                              # stack, red bands
     for y in (6, 12, 18):
@@ -314,7 +426,9 @@ def write_icon(path, size=64, scale=8):
         rect(f, 36, y, 11, 1, FLOOR)
     rect(f, 30, 42, 26, 10, RUIN)                             # reactor block
     rect(f, 4, 50, 56, 1, FLOOR)
+    campfire(f, 34, 50, 0, sparks=False)
     crab(f)
+    stick(f, 34, 50)
     raw = bytearray()
     for row in f:
         line = bytearray([0])
@@ -335,6 +449,9 @@ def write_icon(path, size=64, scale=8):
 if __name__ == "__main__":
     if sys.argv[1].endswith(".png"):
         write_icon(sys.argv[1])
+        sys.exit(0)
+    if sys.argv[1].endswith(".ts"):
+        write_ts(sys.argv[1])
         sys.exit(0)
     seq = frames()
     if len(sys.argv) > 2:

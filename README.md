@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.gif" alt="zonecraft: a pixel crab in a gas mask breathes through its filter in front of a nuclear plant while an anomaly pulses" width="600">
+  <img src="assets/logo.gif" alt="zonecraft: a pixel crab in a gas mask sits by a campfire roasting a sausage in front of a nuclear plant while an anomaly pulses" width="600">
 </p>
 
 # zonecraft

@@ -12,6 +12,14 @@ export type Paste = {
   compareText: string
 }
 
+/** A mod the panel can track: its folder (forward slashes) and its mod.json name. */
+export type ModChoice = {
+  root: string
+  name: string
+  /** The mod this session's folder is in. */
+  isHere: boolean
+}
+
 /** What the panel shows; read fresh from disk on each draw. */
 export type Dashboard = {
   modRoot?: string
@@ -36,6 +44,8 @@ declare module 'claude-code' {
       tick: Shaped<number>
       /** The paste last copied, and when, for the "copied" mark. */
       copied: Shaped<{ path: string; atMs: number }>
+      /** The mod folder picked in the panel this session; '' for none (the session's own mod is shown). */
+      tracked: Shaped<string>
     }
   }
 }

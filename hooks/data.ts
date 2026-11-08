@@ -1,6 +1,6 @@
 import type { EngineInterface as Engine } from 'claude-code'
 
-import type { Dashboard, Paste, Status } from '../types'
+import type { Dashboard, ModChoice, Paste, Status } from '../types'
 
 const slash = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '')
 const join = (...parts: string[]) => parts.map(slash).join('/')
@@ -109,12 +109,56 @@ export async function listPastes($: Engine, modRoot: string, limit = 6): Promise
   return out
 }
 
-export async function dashboard($: Engine, cwd: string): Promise<Dashboard> {
-  const settings = await readSettings($)
-  const kit = typeof settings.kit === 'string' && settings.kit ? slash(settings.kit) : undefined
-  const game = typeof settings.game === 'string' && settings.game ? slash(settings.game) : undefined
+const setting = (s: Record<string, unknown>, key: string) =>
+  typeof s[key] === 'string' && s[key] ? slash(s[key] as string) : undefined
+
+async function modName($: Engine, root: string): Promise<string> {
+  const mod = await readJson($, join(root, 'mod.json'))
+  return typeof mod?.name === 'string' && mod.name ? mod.name : root.slice(root.lastIndexOf('/') + 1)
+}
+
+/** Every mod the panel can track: the one this session is in, each mod folder under the machine's `mods_dir` (where
+ * new_mod.ps1 makes them), and the mods earlier sessions were opened in (`remembered`); gone folders are dropped.
+ * The session's own mod comes first, the rest by name. */
+export async function knownMods($: Engine, cwd: string, settings: Record<string, unknown>,
+  remembered: readonly string[]): Promise<ModChoice[]> {
+  const here = await findModRoot($, cwd)
+  const roots: string[] = []
+  const add = (r: string) => {
+    if (!roots.some(x => x.toLowerCase() === r.toLowerCase())) roots.push(r)
+  }
+  if (here) add(here)
+  const modsDir = setting(settings, 'mods_dir')
+  if (modsDir) {
+    try {
+      for (const e of await $.fs.list(modsDir)) {
+        if (e.kind === 'dir' && await $.fs.exists(join(modsDir, e.name, 'mod.json'))) add(join(modsDir, e.name))
+      }
+    } catch {
+      // no such folder
+    }
+  }
+  for (const r of remembered) {
+    if (await $.fs.exists(join(r, 'mod.json'))) add(slash(r))
+  }
+  const out: ModChoice[] = []
+  for (const root of roots) out.push({ root, name: await modName($, root), isHere: root === here })
+  return out.sort((a, b) => Number(b.isHere) - Number(a.isHere) || a.name.localeCompare(b.name))
+}
+
+/** Which mod to show: the one picked this session, else the session's own, else the one picked last time, else the
+ * first known. A pick whose folder is gone is passed over. */
+export function chooseMod(mods: readonly ModChoice[], picked: string, lastPicked: string): ModChoice | undefined {
+  const find = (root: string) => (root ? mods.find(m => m.root.toLowerCase() === root.toLowerCase()) : undefined)
+  return find(picked) ?? mods.find(m => m.isHere) ?? find(lastPicked) ?? mods[0]
+}
+
+export async function dashboard($: Engine, root: string | undefined, settings?: Record<string, unknown>):
+  Promise<Dashboard> {
+  settings ??= await readSettings($)
+  const kit = setting(settings, 'kit')
+  const game = setting(settings, 'game')
   const d: Dashboard = { isLegacy: false, kit, game, testPakFiles: 0, checkpoints: 0, pastes: [] }
-  const root = await findModRoot($, cwd)
   if (!root) return d
   d.modRoot = root
   const mod = (await readJson($, join(root, 'mod.json'))) ?? {}
