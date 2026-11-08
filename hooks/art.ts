@@ -23,18 +23,17 @@ function rects(rows: readonly string[], keep: (x: number, y: number) => boolean)
   return out
 }
 
-/** The scene as one SVG: the first frame drawn whole, each later frame as the pixels that change, shown in turn. */
+/** The scene as one SVG on a transparent background: the pixels every frame shares drawn once, and each frame's
+ * own pixels in a group shown in its turn (the first frame's too, so a pixel can go back to transparent). */
 export function sceneSvg(stepMs = 160): string {
-  const base = FRAMES[0]
   const n = FRAMES.length
   const dur = `${(n * stepMs) / 1000}s`
-  let body = rects(base, () => true)
-  for (let k = 1; k < n; k++) {
-    const frame = FRAMES[k]
-    const changed = (x: number, y: number) => frame[y][x] !== base[y][x]
+  const same = (x: number, y: number) => FRAMES.every(f => f[y][x] === FRAMES[0][y][x])
+  let body = rects(FRAMES[0], same)
+  for (let k = 0; k < n; k++) {
     const values = Array.from({ length: n }, (_, i) => (i === k ? 'visible' : 'hidden')).join(';')
-    body += `<g visibility="hidden"><animate attributeName="visibility" values="${values}" dur="${dur}" ` +
-      `calcMode="discrete" repeatCount="indefinite"/>${rects(frame, changed)}</g>`
+    body += `<g visibility="${k === 0 ? 'visible' : 'hidden'}"><animate attributeName="visibility" values="${values}" ` +
+      `dur="${dur}" calcMode="discrete" repeatCount="indefinite"/>${rects(FRAMES[k], (x, y) => !same(x, y))}</g>`
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" shape-rendering="crispEdges">${body}</svg>`
 }

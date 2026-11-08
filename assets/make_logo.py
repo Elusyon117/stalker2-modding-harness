@@ -214,9 +214,8 @@ def stick(f, x0, floor, dy=0, step=0):
     n = max(abs(tx - ax), abs(ty - ay), 1)
     for k in range(n + 1):
         px(f, ax + (tx - ax) * k / n, ay + (ty - ay) * k / n, LOG)
-    rect(f, tx + 1, ty - 1, 5, 2, SAUSAGE)               # skewered on the tip, rounded ends, a scorch mark
-    px(f, tx + 1, ty - 1, BG)
-    px(f, tx + 5, ty - 1, BG)
+    rect(f, tx + 2, ty - 1, 3, 1, SAUSAGE)               # skewered on the tip, rounded ends, a scorch mark
+    rect(f, tx + 1, ty, 5, 1, SAUSAGE)
     px(f, tx + 3, ty, EMBER)
 
 
@@ -287,22 +286,19 @@ def frames():
 
 
 # ---- the panel's scene: the crab and its campfire alone ------------------------------------------------------
-BADGE_W, BADGE_H, BADGE_FLOOR = 46, 26, 22
+BADGE_W, BADGE_H, BADGE_FLOOR = 45, 17, 16
 
 
 def badge(step):
-    """The panel's top-right scene: the crab sitting by its fire under a few stars, flicker step `step`."""
+    """The panel's top-right scene: the crab sitting by its fire, flicker step `step`, cropped close and with no
+    backdrop (transparent), so it sits on the panel's own background."""
     global CX, CY
     keep = CX, CY
-    CX, CY = 1, BADGE_FLOOR - 16
-    f = blank(BADGE_W, BADGE_H)
-    for x, y in ((6, 3), (17, 2), (30, 4), (41, 2), (24, 1)):
-        px(f, x, y, TITLE if (x + step) % 4 == 0 else SUB)
-    rect(f, 0, BADGE_FLOOR, BADGE_W, 1, FLOOR)
-    campfire(f, 33, BADGE_FLOOR, step)
+    CX, CY = 0, BADGE_FLOOR - 16
+    f = [[TRANSPARENT] * BADGE_W for _ in range(BADGE_H)]
+    campfire(f, 32, BADGE_FLOOR, step)
     crab(f)
-    stick(f, 33, BADGE_FLOOR, 0, step)
-    corners(f, 3)
+    stick(f, 32, BADGE_FLOOR, 0, step)
     CX, CY = keep
     return f
 

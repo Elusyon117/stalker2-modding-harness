@@ -3,6 +3,7 @@ import type { Register } from 'claude-code'
 
 import type { Dashboard, Paste, Status } from '../types'
 import { sceneCells, sceneSvg } from './art'
+import { H as SCENE_H, W as SCENE_W } from './clawd'
 import { age, chooseMod, dashboard, findModRoot, knownMods, readSettings } from './data'
 
 const PANE = 'zonecraft'
@@ -110,7 +111,7 @@ export const register: Register = on => {
     const scene = () => {
       if (e.surface === 'desktop' || e.surface === 'mobile' || e.surface === 'vscode') {
         const { Svg } = $.ui.resolve({ ...e, surface: e.surface })
-        return <Svg source={SCENE_SVG} alt={SCENE_ALT} width={138} height={78} />
+        return <Svg source={SCENE_SVG} alt={SCENE_ALT} width={SCENE_W * 2} height={SCENE_H * 2} />
       }
       if (e.surface === 'terminal') {
         const { Raster } = $.ui.resolve({ ...e, surface: e.surface })
