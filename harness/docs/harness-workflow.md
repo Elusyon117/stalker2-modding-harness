@@ -43,7 +43,7 @@ each mod repo.
 2. Edit `harness/docs/*.md` (or a tool) in the mod repo. Write for any mod: game/kit/pipeline facts, tester workflow,
    tools. Mod-only history stays in the mod's log.
 3. `powershell -File harness\tools\push_harness.ps1 -Message "docs: <what>"`: applies the diff to the local harness
-   clone (`..\stalker2-modding-harness`, cloned if missing), commits, pushes, then syncs this repo.
+   clone (`..\zonecraft`, cloned if missing), commits, pushes, then syncs this repo.
 Do it in the same session. A mod with unpromoted harness edits is exactly the fracture this setup prevents.
 
 ## Working in the harness repo itself

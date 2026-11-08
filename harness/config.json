@@ -4,8 +4,8 @@
   "game": "",
   "github_owner": "",
   "harness_remote_url": "",
-  "upstream_url": "https://github.com/noahsemus/stalker2-modding-harness.git",
-  "harness_clone": "../stalker2-modding-harness",
+  "upstream_url": "https://github.com/Elusyon117/zonecraft.git",
+  "harness_clone": "../zonecraft",
   "ue4ss_source": "",
   "downloads": "~/Downloads"
 }

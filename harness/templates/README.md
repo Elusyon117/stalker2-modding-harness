@@ -6,4 +6,4 @@
 no UE4SS.
 
 Build instructions: [BUILD.md](BUILD.md). Made with the
-[Stalker 2 modding harness](https://github.com/noahsemus/stalker2-modding-harness).
+[zonecraft](https://github.com/Elusyon117/zonecraft).

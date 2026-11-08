@@ -23,7 +23,7 @@ CFG = _read(os.path.join(REPO, "harness", "config.json"))
 CFG.update(_read(os.path.join(os.environ.get("LOCALAPPDATA", ""), "stalker2-modding-harness", "settings.json")))
 CFG.update(_read(os.path.join(REPO, "harness", "local.json")))
 if not CFG.get("harness_remote_url") and CFG.get("github_owner"):
-    CFG["harness_remote_url"] = f"https://github.com/{CFG['github_owner']}/stalker2-modding-harness.git"
+    CFG["harness_remote_url"] = f"https://github.com/{CFG['github_owner']}/zonecraft.git"
 MOD = _read(os.path.join(REPO, "mod.json"))
 KIT = CFG.get("kit", "")
 GAME = os.path.join(CFG.get("game", ""), "Stalker2")

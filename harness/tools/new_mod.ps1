@@ -66,7 +66,7 @@ try {
     }
 
     git add -A
-    git commit -q -m "Create $Name from stalker2-modding-harness $($sha.Substring(0,7))"
+    git commit -q -m "Create $Name from zonecraft $($sha.Substring(0,7))"
     if (-not $NoGitHub) {
         $vis = if ($Private) { "--private" } else { "--public" }
         gh repo create "$($Cfg.github_owner)/$here" $vis --description $Description --source . --remote origin --push

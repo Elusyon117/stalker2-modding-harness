@@ -296,7 +296,46 @@ def write_gif(path, seq):
         fh.write(g)
 
 
+def write_icon(path, size=64, scale=8):
+    """Square PNG (size*scale px): the masked crab in front of the plant's stack, for the plugin listing."""
+    import struct
+    import zlib
+    global W, H, CX, CY
+    W, H = size, size
+    CX, CY = 18, 30
+    f = blank()
+    rect(f, 39, 6, 5, 36, MASK2)                              # stack, red bands
+    for y in (6, 12, 18):
+        rect(f, 39, y, 5, 3, SHADE)
+    for k in range(30):                                       # lattice legs
+        px(f, 35 + k * 3 / 29, 41 - k, FLOOR)
+        px(f, 47 - k * 3 / 29, 41 - k, FLOOR)
+    for y in (14, 22, 30, 38):
+        rect(f, 36, y, 11, 1, FLOOR)
+    rect(f, 30, 42, 26, 10, RUIN)                             # reactor block
+    rect(f, 4, 50, 56, 1, FLOOR)
+    crab(f)
+    raw = bytearray()
+    for row in f:
+        line = bytearray([0])
+        for c in row:
+            rgb = PALETTE[BG if c == TRANSPARENT else c]
+            line += bytes([(rgb >> 16) & 255, (rgb >> 8) & 255, rgb & 255]) * scale
+        raw += bytes(line) * scale
+    n = size * scale
+
+    def chunk(tag, data):
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+    png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", n, n, 8, 2, 0, 0, 0))
+    png += chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
+    with open(path, "wb") as fh:
+        fh.write(png)
+
+
 if __name__ == "__main__":
+    if sys.argv[1].endswith(".png"):
+        write_icon(sys.argv[1])
+        sys.exit(0)
     seq = frames()
     if len(sys.argv) > 2:
         for k in sys.argv[2].split(','):

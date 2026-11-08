@@ -35,6 +35,28 @@ zonecraft is built on Noah Semus's [stalker2-modding-harness](https://github.com
 
 After setup you never type commands. You talk in plain language.
 
+## Install
+
+zonecraft is a Claude Code plugin. In a Claude Code terminal session, type:
+
+```
+/plugin install zonecraft --marketplace Elusyon117/zonecraft
+```
+
+Answer `y` to add the marketplace, then pick the user scope so it loads in every session. From a shell instead:
+
+```bash
+claude plugin install zonecraft --marketplace Elusyon117/zonecraft
+```
+
+**Desktop app:** click **+** next to the prompt box → **Plugins** → **Add marketplace** → `Elusyon117/zonecraft` →
+**Add plugin**.
+
+Update later with `claude plugin marketplace update elusyon-zonecraft`, then `claude plugin update zonecraft`.
+
+The plugin adds the `zonecraft` skill: Claude uses it by itself whenever you talk about Stalker 2 modding, or you can
+type `/zonecraft`.
+
 ## Get started
 
 You need a **Windows PC with the game installed**, about **600 GB of free disk space** for the Zone Kit, and an
@@ -43,11 +65,15 @@ You need a **Windows PC with the game installed**, about **600 GB of free disk s
 1. **Install the Zone Kit** (the one thing the agent can't do for you): open the **Epic Games Store**, search for
    **S.T.A.L.K.E.R. 2 Zone Kit**, install it, start it once and let it finish its first start (it takes a long time).
    You can do step 2 while it downloads.
-2. **Open your AI agent** in an empty folder where you want your mod projects to live (for example your Documents
-   folder), and send it this:
+2. **Add zonecraft to Claude Code** (see [Install](#install) below), open Claude Code in an empty folder where you
+   want your mod projects to live (for example your Documents folder), and send it this:
 
-   > Set me up to make S.T.A.L.K.E.R. 2 mods with https://github.com/noahsemus/stalker2-modding-harness. Clone it and
-   > follow its harness/docs/setup.md.
+   > Set me up to make S.T.A.L.K.E.R. 2 mods with zonecraft.
+
+   Using another AI agent (Codex, Gemini CLI, Copilot, Cursor)? Send it this instead:
+
+   > Set me up to make S.T.A.L.K.E.R. 2 mods with https://github.com/Elusyon117/zonecraft. Clone it and follow its
+   > harness/docs/setup.md.
 
 That's it. The agent installs what's missing, finds your game and the Zone Kit, and asks you a few questions (your
 name, your GitHub account; it helps you make one if you have none). Twice it will ask you to do something yourself:

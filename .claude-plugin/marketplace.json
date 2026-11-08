@@ -1,0 +1,6 @@
+{
+  "name": "elusyon-zonecraft",
+  "description": "zonecraft: make S.T.A.L.K.E.R. 2 Zone Kit mods with Claude Code.",
+  "owner": { "name": "Elusyon117" },
+  "plugins": [{ "name": "zonecraft", "source": "./" }]
+}

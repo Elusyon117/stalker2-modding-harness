@@ -7,8 +7,8 @@ PowerShell; run `.ps1` tools as `powershell -ExecutionPolicy Bypass -File <path>
 
 ## 0. Where are we?
 - If the harness is not on disk yet: pick a projects folder with the user (default `%USERPROFILE%\Documents`), then
-  `git clone https://github.com/noahsemus/stalker2-modding-harness.git` there (if Git is missing, do step 2 first).
-  All mod folders will be created next to it. Continue inside `stalker2-modding-harness`.
+  `git clone https://github.com/Elusyon117/zonecraft.git` there (if Git is missing, do step 2 first).
+  All mod folders will be created next to it. Continue inside `zonecraft`.
 - Run `harness\tools\setup.ps1` (no switches). It finds the Zone Kit (Epic launcher manifests) and the game (Steam
   libraries), writes the machine settings `%LOCALAPPDATA%\stalker2-modding-harness\settings.json` (paths and GitHub account; never inside the repo), and ends with
   `check_setup.ps1`. Work through what it reports, in this order:

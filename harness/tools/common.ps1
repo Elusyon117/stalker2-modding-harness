@@ -13,7 +13,7 @@ foreach ($local in @((Read-Json $MachineSettings), (Read-Json "$Repo\harness\loc
     if ($local) { foreach ($p in $local.PSObject.Properties) { $Cfg | Add-Member -Force -NotePropertyName $p.Name -NotePropertyValue $p.Value } }
 }
 if (-not $Cfg.harness_remote_url -and $Cfg.github_owner) {
-    $Cfg | Add-Member -Force -NotePropertyName harness_remote_url -NotePropertyValue "https://github.com/$($Cfg.github_owner)/stalker2-modding-harness.git"
+    $Cfg | Add-Member -Force -NotePropertyName harness_remote_url -NotePropertyValue "https://github.com/$($Cfg.github_owner)/zonecraft.git"
 }
 
 # Tools call this for the settings they need; config.json ships empty values, setup.ps1 fills them per machine.
