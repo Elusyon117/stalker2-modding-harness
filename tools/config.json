@@ -1,0 +1,8 @@
+{
+  "_comment": "Generic defaults only; nothing about any one user belongs here. Per-user values (kit, game, github_owner, ue4ss_source) are detected by tools/setup/setup.ps1 and stored outside the repo in %LOCALAPPDATA%/zonecraft/settings.json (same keys).",
+  "kit": "",
+  "game": "",
+  "github_owner": "",
+  "ue4ss_source": "",
+  "downloads": "~/Downloads"
+}
