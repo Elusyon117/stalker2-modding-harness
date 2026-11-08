@@ -26,6 +26,9 @@ PowerShell tools default `-Mod` to `mod.json` "name". Per-user values (paths, Gi
 | `tools/editor/export_t3d.py` | open editor | full T3D export of any asset (read Blueprints back) |
 | `tools/editor/create_marker.py` | headless | permanent compatibility marker asset |
 | `tools/t3d/bp_t3d.py`, `bp_graph.py` | library | write Blueprint paste text (nodes, pins, both-ended links, comment boxes) |
+| `tools/t3d/bp_nodes.py` | library | ready-made nodes on `bp_graph`: events, input actions, calls, variables, Branch, Sequence, Delay, loops, casts, delegates |
+| `tools/t3d/verify_paste.py lint <f>` / `compare <f> [<export> \| --asset P]` | shell (compare `--asset`: open editor) | checks paste text before pasting; after pasting, compares it with the asset's export (missing nodes, lost links) |
+| `tools/t3d/test_bp_nodes.py` | shell | offline tests: `bp_nodes` writes the same text as tested hand-written factories |
 | `tools/t3d/t3d_lift.py` | library | lift nodes from an exported T3D into paste text |
 | `tools/pak/zen_names.py <dir> [--imports] [--filter RE]` | shell | names / imports of cooked (Zen) packages |
 | `tools/pak/dump_names.py <uasset>` | shell | FName table of an uncooked package (keys, actions, modifiers) |

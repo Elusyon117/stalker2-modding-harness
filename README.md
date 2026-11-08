@@ -1,4 +1,8 @@
-# Stalker 2 modding harness
+<p align="center">
+  <img src="docs/logo.gif" alt="zonecraft: a pixel crab in a gas mask breathes through its filter in front of a nuclear plant while an anomaly pulses" width="600">
+</p>
+
+# zonecraft
 
 Make your own **S.T.A.L.K.E.R. 2: Heart of Chornobyl** mods by talking to an AI coding agent, even if you have never
 modded anything, used a terminal or written code.
@@ -15,6 +19,10 @@ agent:
 Mods made with it: [Immersive Dialogue](https://github.com/noahsemus/stalker2-immersive-dialogue),
 [Immersive Campfires](https://github.com/noahsemus/stalker2-immersive-campfires),
 [Immersive Reloading](https://github.com/noahsemus/stalker2-immersive-reloading).
+
+zonecraft is built on Noah Semus's [stalker2-modding-harness](https://github.com/noahsemus/stalker2-modding-harness)
+(MIT) and adds a Blueprint node library (`harness/tools/t3d/bp_nodes.py`) and a paste checker
+(`harness/tools/t3d/verify_paste.py`) on top of it.
 
 ## How it works
 
@@ -124,3 +132,6 @@ reads the game's logs and crash reports itself. A few things worth knowing:
 ## License
 MIT (see [LICENSE](LICENSE)). S.T.A.L.K.E.R. 2 and its assets belong to GSC Game World; this repository contains no
 game files. Mods you make are yours; check GSC's modding terms and Nexus Mods' rules before publishing.
+
+<sub>Unofficial fan project, not affiliated with GSC Game World or Anthropic. The crab in the logo is drawn in the style
+of Clawd, Anthropic's Claude Code mascot; the plant in the background is original pixel art.</sub>

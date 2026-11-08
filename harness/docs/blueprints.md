@@ -12,11 +12,20 @@ of 20-200 nodes (event graphs and anim graphs).
    **both** ends, `graph.box(...)` comment boxes) on top of `bp_t3d.py` (pin/type strings, fresh 32-hex GUIDs).
    `t3d_lift.py` lifts real nodes out of an exported T3D (e.g. the game's own AnimGraph nodes with their nested
    binding sub-objects), renames them, gives every pin a fresh id and lets you relink them.
+   **Start from `tools/t3d/bp_nodes.py`** (`Nodes(graph, self_class=...)`): events (Tick, BeginPlay, Enhanced Input
+   actions, custom events, delegate binding), member and library calls (pure / impure), variable get / set (self and
+   other objects), Branch, Sequence, Delay, ForLoop, ForEachLoop, casts (`cast_player`), bool / double math helpers,
+   and `chain(a, b, c)` for exec flow. They write the exact text of nodes already pasted and compiled in shipped mods
+   (`test_bp_nodes.py` checks that); write pins by hand only for node kinds it does not have yet.
+   Then run `verify_paste.py lint <file>` (no editor): duplicate names / pin ids, one-sided links, calls the editor
+   drops or prunes silently, and the list of external links the tester has to wire by hand.
 3. Put it on the clipboard (`Set-Clipboard -Value (Get-Content <file> -Raw)`), the tester clicks into the graph and
    presses Ctrl+V, then wires only the 1-3 pins that connect to nodes outside the block. **Links to nodes that are
    not in the paste are dropped**, so keep external wiring minimal and name those pins exactly.
 4. They compile and save; read it back with `export_t3d.py` to verify (the export lists deleted-but-not-GC'd nodes
-   too: trust each graph's `Nodes(n)` list).
+   too: trust each graph's `Nodes(n)` list). `verify_paste.py compare <file> --asset /<Mod>/.../BP_X` (kit Python,
+   editor open) exports and compares in one step: nodes matched by kind + member + comment, reports nodes that did
+   not arrive and nodes with fewer links than pasted.
 
 **Readable paste layout (tester-approved, Looting 2026-10-10: "best layout so far"):** call `graph.layout_tree()`
 before writing. It
@@ -33,7 +42,8 @@ each use (`self_get` creates one getter per use), or the wires fan out across th
 column grid) is kept only for comparison; it was harder to follow.
 
 Put `NodeComment` labels and comment boxes in the generated text (see `collaboration.md`). Keep mod-specific
-generators in the mod's `zonekit/tools/gen_*.py`; lift reusable node builders into `bp_graph.py` here.
+generators in the mod's `zonekit/tools/gen_*.py`; lift reusable node builders into `bp_nodes.py` here (with a
+reference copy of the tested factory in `test_bp_nodes.py`).
 
 - **Delegate binding pastes fine**: `K2Node_AddDelegate` (`DelegateReference=(MemberParent=<class>,MemberName=...)`,
   a `Delegate` pin whose `PinSubCategoryMemberReference` names the `..._DelegateSignature` in its package) linked to a
