@@ -1,9 +1,19 @@
 {
   "name": "zonecraft",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Make S.T.A.L.K.E.R. 2 mods by talking to Claude: Zone Kit setup, Blueprint paste text with a node library and paste checker, cooking, test installs and releases.",
-  "author": { "name": "Elusyon117", "url": "https://github.com/Elusyon117" },
+  "author": {
+    "name": "Elusyon117",
+    "url": "https://github.com/Elusyon117"
+  },
   "repository": "https://github.com/Elusyon117/zonecraft",
   "license": "MIT",
-  "keywords": ["stalker2", "zone-kit", "unreal", "modding", "blueprints"]
+  "keywords": [
+    "stalker2",
+    "zone-kit",
+    "unreal",
+    "modding",
+    "blueprints"
+  ],
+  "types": "./types/index.d.ts"
 }

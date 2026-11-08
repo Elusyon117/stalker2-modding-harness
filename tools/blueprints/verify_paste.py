@@ -243,7 +243,8 @@ def main(argv):
     asset = None
     if "--asset" in argv:
         i = argv.index("--asset"); asset = argv[i + 1]; del argv[i:i + 2]
-    paste = open(argv[1], encoding="utf-8-sig").read()
+    paste_path = argv[1]
+    paste = open(paste_path, encoding="utf-8-sig").read()
     if argv[0] == "lint":
         nodes, errors, notes = lint(paste)
         print(f"{len(nodes)} nodes, {len(errors)} problems")
@@ -251,6 +252,10 @@ def main(argv):
             print("  ERROR", e)
         for n in notes:
             print("  note ", n)
+        ext = sum(1 for n in notes if n.startswith("external link"))
+        summary = (f"{len(nodes)} nodes, " + (f"{len(errors)} problems: {errors[0]}" if errors else "no problems")
+                   + (f", {ext} wire(s) to connect by hand" if ext else ""))
+        write_report(paste_path, "lint", not errors, summary, errors + notes)
         return 1 if errors else 0
     export_path = export_asset(asset) if asset else (argv[2] if len(argv) > 2 else None)
     if not export_path:
@@ -258,13 +263,28 @@ def main(argv):
         return 2
     pasted, live, missing, thin = compare(paste, open(export_path, encoding="utf-8", errors="replace").read(), graph)
     print(f"pasted {len(pasted)} nodes; graph{' ' + graph if graph else 's'} now hold {len(live)} nodes")
-    for s, k in missing:
-        print(f"  MISSING x{k}: {fmt(s)}")
-    for s, e, g_ in thin:
-        print(f"  FEWER LINKS ({g_} of {e}): {fmt(s)}")
-    if not missing and not thin:
+    lines = [f"MISSING x{k}: {fmt(s)}" for s, k in missing] + \
+            [f"FEWER LINKS ({g_} of {e}): {fmt(s)}" for s, e, g_ in thin]
+    for line in lines:
+        print("  " + line)
+    if not lines:
         print("  every pasted node arrived with its links")
-    return 1 if (missing or thin) else 0
+    ok = not lines
+    summary = ("every node arrived with its links" if ok else
+               f"{sum(k for _, k in missing)} node(s) missing, {len(thin)} with fewer links")
+    write_report(paste_path, "compare", ok, summary, lines)
+    return 0 if ok else 1
+
+
+def write_report(paste_path, kind, ok, summary, details):
+    """<paste>.lint.json / <paste>.compare.json beside the paste file: what the zonecraft panel shows."""
+    import json
+    base = paste_path[:-4] if paste_path.lower().endswith(".txt") else paste_path
+    try:
+        with open(f"{base}.{kind}.json", "w", encoding="utf-8") as f:
+            json.dump({"ok": ok, "summary": summary, "details": details}, f, indent=1)
+    except OSError as e:
+        print(f"note: could not write the {kind} report ({e})")
 
 
 if __name__ == "__main__":

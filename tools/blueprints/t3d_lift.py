@@ -32,7 +32,8 @@ def _blocks(lines, export_path):
 
 class Lifted:
     def __init__(self, export_file, export_path, new_name, x, y, replace=None):
-        lines = open(export_file, encoding="utf-8", errors="replace").read().splitlines()
+        with open(export_file, encoding="utf-8", errors="replace") as f:
+            lines = f.read().splitlines()
         self.cls, body = _blocks(lines, export_path)
         assert self.cls and body, export_path
         self.name, self.links, self.pin_ids = new_name, {}, {}
