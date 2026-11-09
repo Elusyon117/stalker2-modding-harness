@@ -12,6 +12,9 @@ It gives Claude:
 - **Rules** for working with you: what to check before building anything, what never to do.
 - **Hard-won knowledge** from shipping real mods: how the game and GSC's official mod editor (the *Zone Kit*)
   behave, which approaches crash the game, how to stay compatible with other popular mods.
+- **GSC's official Zone Kit guides, digested**: all 26 support-site guides and the Quest Tool manual folded into
+  zonecraft's knowledge in its own words (quests and dialogs, world actors, audio, weapons, cfg patches, packaging,
+  publishing), each with a link to the original.
 - **Tools** that set up your PC, write Blueprint logic you paste into the editor (and check it arrived intact), build
   your mod, install it into the game for testing and package it for Nexus Mods.
 
@@ -152,7 +155,7 @@ reads the game's logs and crash reports itself. A few things worth knowing:
 | Folder | What |
 |---|---|
 | [`skills/zonecraft/`](skills/zonecraft/SKILL.md) | The skill Claude loads: rules, session start, where everything is |
-| [`knowledge/`](knowledge/) | What is known about the game, the Zone Kit and the pipeline ([setup](knowledge/setup.md), [blueprints](knowledge/blueprints.md), [animation](knowledge/animation.md), [tools](knowledge/tools.md), ...) |
+| [`knowledge/`](knowledge/) | What is known about the game, the Zone Kit and the pipeline ([setup](knowledge/setup.md), [blueprints](knowledge/blueprints.md), [animation](knowledge/animation.md), [quests](knowledge/quests.md), [world actors](knowledge/world-actors.md), [audio](knowledge/audio.md), [weapons](knowledge/weapons.md), [official guides](knowledge/zonekit-guides.md), [tools](knowledge/tools.md), ...) |
 | [`tools/`](tools/) | `setup/`, `build/`, `editor/`, `blueprints/` (node library, paste checker), `pak/`. PowerShell plus the Python that ships inside the Zone Kit; nothing else to install |
 | [`templates/`](templates/) | The files a new mod starts with |
 | [`probe/`](probe/) | UE4SS debug probes (your PC only, never shipped) |

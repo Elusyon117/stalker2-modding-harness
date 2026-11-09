@@ -19,6 +19,24 @@ ZST (`BP_ZoneWatchSubsystem.OnTick`), ImmersiveDialogue 2.1 (`Runtime/BP_ImmDlgS
    its keys, per-tick logic with edge detection (do the work on state changes, not every frame).
 6. Get the pawn with `Get Player Pawn` → `Cast To PC` (the native player class; `BP_Stalker2Character_C` at runtime).
 
+## Official notes (GSC guides "How to work with ModWorldSubsystem", "Save/Load system for mods")
+- Create it as Blueprint Class → `ModWorldSubsystem`; in its Event Graph search "modworldsubsystem" to list its own
+  events and functions (`OnWorldBeginPlay`, `OnInitialized`, `OnTick`, the save events below).
+- A ModWorldSubsystem is created for **every** level, the main menu included. Gate world-only logic, e.g.
+  `OnWorldBeginPlay` → `Get Object Name(World)` `==` `WorldMap_WP` (case-insensitive) → Branch. This is also GSC's
+  recommended way to start a mod quest in game (`quests.md`).
+
+## Saving mod data in the player's save
+1. Make a **Structure** asset with the fields to keep (e.g. `S_<Short>SaveData { Score : Integer }`).
+2. On the subsystem set **Should Save Data = true** (default false: nothing is saved or loaded).
+3. **OnSaveDataLoaded(SaveData)** fires shortly after a save loads: `GetInstancedStructValue` → your struct, keep it
+   in a variable, apply it (e.g. to your actor; check the actor reference with a validated get first).
+4. **OnSaveDataRequested** fires while the game saves: put the current values in the struct →
+   `MakeInstancedStruct` → **SetDataForSave** (returns false if the data breaks the limits). Nothing is saved unless
+   you call it.
+5. Limit: about **10 MB per save slot**, serialisation overhead included.
+Use this instead of a global variable cfg when the data is the mod's own (scores, unlocks, settings per save).
+
 ## Rules of thumb
 - Only the subsystem data asset (and any unavoidable overrides) goes in the override pak; everything else is
   NewContent.

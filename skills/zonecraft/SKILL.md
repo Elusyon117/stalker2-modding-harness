@@ -1,6 +1,6 @@
 ---
 name: zonecraft
-description: Make S.T.A.L.K.E.R. 2 (Heart of Chornobyl) mods with GSC's Zone Kit editor. Use when the user wants to set up Stalker 2 modding, create or continue a Stalker 2 mod, work on Zone Kit Blueprints, animation or input, write Blueprint paste text, cook / install / test a mod pak, read the game's logs or crashes, or cut a release for Nexus Mods. Also for "where were we?" in a Stalker 2 mod folder.
+description: Make S.T.A.L.K.E.R. 2 (Heart of Chornobyl) mods with GSC's Zone Kit editor. Use when the user wants to set up Stalker 2 modding, create or continue a Stalker 2 mod, work on Zone Kit Blueprints, animation or input, quests and dialogs, world actors and placeholders, audio (Wwise), weapons or .cfg patches, write Blueprint paste text, cook / install / test a mod pak, read the game's logs or crashes, or cut a release for Nexus Mods. Also for "where were we?" in a Stalker 2 mod folder.
 ---
 
 # zonecraft: making S.T.A.L.K.E.R. 2 mods
@@ -71,9 +71,14 @@ A **mod folder** has `mod.json` and a `CLAUDE.md` at its root, and holds only th
 | Plugin creation, classifier lists, cook rules, mount order, install, release | `pipeline.md` |
 | Blueprint paste text, reading graphs back, editor Python, editor traps | `blueprints.md` |
 | Input mapping contexts, rebinds, key sync | `input.md` |
-| Running Blueprint logic without overriding anything (ModWorldSubsystem + actor) | `runtime-host.md` |
+| Running Blueprint logic without overriding anything (ModWorldSubsystem + actor), saving mod data in saves | `runtime-host.md` |
 | Player animation, montages, anim layers, known crash families | `animation.md` |
-| Game `.cfg` data, patch files | `config-files.md` |
+| Game `.cfg` data, patch files, cfg patch logging | `config-files.md` |
+| Quests, Quest Tool nodes, dialogs, journal, NPC names and localised texts (Mod TextTool) | `quests.md` |
+| Adding, patching or deleting actors in the world, placeholders, SpawnActorPrototypes | `world-actors.md` |
+| Sound and music mods (Wwise project, SoundBanks, AkAudioEvents) | `audio.md` |
+| New weapons, weapon stats, weapon animation swaps | `weapons.md` |
+| GSC's official guides: which zonecraft file covers each, links | `zonekit-guides.md` |
 | UE4SS probes, logs, crash dumps | `diagnostics.md` |
 | Other popular mods, shared assets, inspecting other paks, MCM | `compatibility.md` |
 | Verified game behaviour (native vetoes, flags, functions) | `game-facts.md` |

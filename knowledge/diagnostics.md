@@ -11,6 +11,23 @@
 | Installed mods | `<game>\Stalker2\Content\Paks\~mods\` |
 | Cook log | `%TEMP%\<Mod>_cook.log` |
 
+## Zone Kit logs and launch arguments (GSC guides "Debugging utilities", "Command line arguments reference")
+- The kit's logs are in the same Saved folder as the game's (`%LOCALAPPDATA%\Stalker2\Saved\Logs\`, current and
+  previous sessions). In the editor: Window → Output Log; Editor Preferences → General → Output Log: bigger font,
+  Local time stamps, Colorize Category Only; use its category filter.
+- Launch arguments go in Epic Games launcher → Library → Zone Kit → Manage → Launch Options:
+  - `-LogCmds="LogParserNodePatching Verbose, LogModKitGameFeaturesManager Verbose"`: set categories once and forget.
+  - `-ProtoLoadingMode=2`: load every prototype synchronously (0 = all async, 1 = only SpawnActorPrototypes async).
+    Slower, but cfg patches apply in order and their log reads cleanly.
+  - `-DumpConfigFileCache`: dump the cfg cache to `ConfigFileCacheDump_ModEditor.txt` on every update.
+- Useful categories: `LogParserNodePatching` (cfg patches, conflicts), `LogConfigFileCache` (which cfg files were
+  found), `LogModKitGameFeaturesManager` (mod creation / conversion), `LogModTextToolManager` (texts).
+- Quest problems have their own validators and logs (`quests.md` § Debugging quests). Package classification is
+  logged and written to `Stalker2\SavedMods\PackageClassifier\` (`pipeline.md` § 3).
+- Reporting a kit bug to GSC: support site → Submit a request → Support request, Issue Type Bug; steps to reproduce,
+  how often, the session's log, asset names, screenshots or video, PC specs, everything large as a Google Drive
+  link.
+
 ## Without UE4SS
 - `Print String` is stripped in Shipping. Use visible side effects, counters on the mod actor read back by a probe,
   or a canary key.
