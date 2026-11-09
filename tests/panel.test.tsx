@@ -19,6 +19,12 @@ const FILES: Record<string, string> = {
   [`${MOD}/CLAUDE.md`]: '# MyMod\n\n## Current state\n- 2026-11-01: repo created.\n- 2026-11-07: build 3 sits by the fire.\n\n## Key facts\n',
   [`${OTHER}/mod.json`]: '{"name": "OtherMod", "short": "OM"}',
   [`${OTHER}/CLAUDE.md`]: '# OtherMod\n\n## Current state\n- 2026-11-05: the radio plays.\n',
+  [`${MOD}/PLAN.md`]: [
+    '# MyMod — plan', '', '## Idea', 'Sit by any fire.', '',
+    '## Features', '_(tick when confirmed)_', '- [x] Sit with a key', '- [x] Camera lowers', '- [ ] Heal while sitting', '',
+    '## Details to check', '- [x] Keyboard and gamepad', '- [ ] Works with Campfire Saves', '',
+    '## Approach', '- [ ] not a feature', '',
+  ].join('\n'),
   [`${MOD}/zonekit/paste/seat_tick.txt`]: PASTE,
   [`${MOD}/zonekit/paste/seat_tick.lint.json`]: '{"ok": true, "summary": "2 nodes, no problems"}',
 }
@@ -107,6 +113,11 @@ test('the panel shows the mod, its cook and test copy, and a paste to copy', asy
     expect((await ui.find({ type: 'Text', text: /build3/ }))?.text).toBe('1 (last: build3)')
     expect((await ui.find({ type: 'Text', text: /nodes/ }))?.text).toBe('2 nodes · 2 min ago')
     expect((await ui.find({ type: 'Text', text: /check:/ }))?.text).toBe('check: 2 nodes, no problems')
+    expect((await ui.find({ type: 'Text', text: /^Sit by any fire/ }))?.text).toBe('Sit by any fire.')
+    expect((await ui.find({ type: 'Text', text: /of 3 done/ }))?.text).toBe('2 of 3 done')
+    expect((await ui.find({ type: 'Text', text: /^Heal while/ }))?.text).toBe('Heal while sitting')
+    expect((await ui.find({ type: 'Text', text: /open$/ }))?.text).toBe('1 open')
+    expect(await ui.find({ type: 'Text', text: /not a feature/ })).toBeUndefined()
     const scene = await ui.find({ type: surface === 'terminal' ? 'Raster' : 'Svg' })
     expect(scene).toBeDefined()
     if (surface === 'desktop') expect(String((scene?.props as { source?: string }).source).length).toBeLessThan(131072)
@@ -130,6 +141,7 @@ test('the picker switches the panel to another mod and remembers the pick', asyn
     await ui.select({ key: 'mod', value: OTHER })
     expect((await ui.find({ type: 'Text', text: /^OtherMod/ }))?.text).toContain('OtherMod')
     expect((await ui.find({ type: 'Text', text: /radio plays/ }))?.text).toContain('2026-11-05')
+    expect((await ui.find({ type: 'Text', text: /No feature list yet/ }))?.text).toContain('PLAN.md')
     expect(store['mod-picked']).toBe(OTHER)
     await ui.select({ key: 'mod', value: MOD })
     await ui.unmount()
@@ -148,5 +160,6 @@ test('with no mod anywhere the panel says how to get one', async ($, on) => {
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   expect((await ui.find({ type: 'Text', text: /No mod in this folder/ }))?.text).toContain('mod.json')
   expect((await ui.find({ type: 'Text', text: /None yet/ }))?.text).toContain('zonekit/paste')
+  expect(await ui.find({ key: 'scene:exploring' })).toBeDefined()
   await ui.unmount()
 })

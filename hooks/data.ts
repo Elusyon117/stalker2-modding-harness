@@ -1,6 +1,6 @@
 import type { EngineInterface as Engine } from 'claude-code'
 
-import type { Dashboard, ModChoice, Paste, Status } from '../types'
+import type { Dashboard, ModChoice, Paste, PlanItem, Status } from '../types'
 
 const slash = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '')
 const join = (...parts: string[]) => parts.map(slash).join('/')
@@ -57,6 +57,26 @@ export function currentState(text: string): string | undefined {
   const lines = (end < 0 ? rest : rest.slice(0, end)).filter(l => l.startsWith('- '))
   const last = lines[lines.length - 1]
   return last?.slice(2).trim()
+}
+
+/** The lines under the "## <heading>..." section of a Markdown text, up to the next "## " heading. */
+function section(text: string, heading: string): string[] {
+  const lines = text.split('\n')
+  const at = lines.findIndex(l => l.toLowerCase().startsWith(`## ${heading.toLowerCase()}`))
+  if (at < 0) return []
+  const rest = lines.slice(at + 1)
+  const end = rest.findIndex(l => l.startsWith('## '))
+  return end < 0 ? rest : rest.slice(0, end)
+}
+
+/** A mod's PLAN.md as the panel shows it: the idea's first line and the two checklists. */
+export function readPlan(text: string): { idea?: string; features: PlanItem[]; details: PlanItem[] } {
+  const checklist = (heading: string) => section(text, heading)
+    .map(l => /^\s*[-*] \[( |x|X)\]\s+(.+?)\s*$/.exec(l))
+    .filter((m): m is RegExpExecArray => m !== null)
+    .map(m => ({ text: m[2], isDone: m[1] !== ' ' }))
+  const idea = section(text, 'Idea').map(l => l.trim()).find(l => l && !l.startsWith('_'))
+  return { idea, features: checklist('Features'), details: checklist('Details to check') }
 }
 
 /** Counts top-level node blocks of paste text (comment boxes excluded). */
@@ -158,8 +178,16 @@ export async function dashboard($: Engine, root: string | undefined, settings?: 
   settings ??= await readSettings($)
   const kit = setting(settings, 'kit')
   const game = setting(settings, 'game')
-  const d: Dashboard = { isLegacy: false, kit, game, testPakFiles: 0, checkpoints: 0, pastes: [] }
+  const d: Dashboard = { isLegacy: false, kit, game, testPakFiles: 0, checkpoints: 0, pastes: [], features: [], details: [] }
   if (!root) return d
+  try {
+    const plan = readPlan((await $.fs.read(join(root, 'PLAN.md'))).replace(/\r\n/g, '\n'))
+    d.idea = plan.idea
+    d.features = plan.features
+    d.details = plan.details
+  } catch {
+    // no plan yet
+  }
   d.modRoot = root
   const mod = (await readJson($, join(root, 'mod.json'))) ?? {}
   d.modName = typeof mod.name === 'string' ? mod.name : undefined

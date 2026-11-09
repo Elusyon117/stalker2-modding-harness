@@ -24,7 +24,8 @@ A **mod folder** has `mod.json` and a `CLAUDE.md` at its root, and holds only th
   or `check_setup.ps1` reports problems, or the user asks to be set up): follow `knowledge/setup.md`. Do every step
   yourself; the user only answers questions and clicks where a program insists on a human.
 - **In a mod folder**: read its `CLAUDE.md` "Current state" so "where were we?" has an answer.
-- **The user wants a new mod**: `knowledge/mod-workflow.md` § New mod (choose the names with them).
+- **The user wants a new mod**: `knowledge/mod-workflow.md` § New mod (the New mod form for their brief, then
+  choose the names with them).
 - **A mod made with the original harness** (it has `harness/` and `.harness-sync`): it still works with its own copy;
   offer to adopt it (`knowledge/mod-workflow.md` § Adopting).
 - **No Zone Kit on this PC** (`check_setup.ps1` says so): you can still write paste text, edit knowledge and tools,
@@ -91,5 +92,6 @@ clipboard for the tester to paste with Ctrl+V, and after they compile and save r
 - A fact about the game, the kit, the pipeline, another mod, or how to work with the tester → zonecraft's
   `knowledge/` (`mod-workflow.md` § Share a learning), in the same session.
 - A fact about this mod (what was tried, what each build showed) → the mod's `zonekit/README.md` log; the
-  reproducible edit → the mod's `BUILD.md`; status → the mod's `CLAUDE.md` "Current state" (one line per checkpoint).
+  reproducible edit → the mod's `BUILD.md`; status → the mod's `CLAUDE.md` "Current state" (one line per checkpoint);
+  a feature the tester confirmed in game → its `- [x]` in the mod's `PLAN.md` "## Features" (the panel shows it).
 - Never put user- or machine-specific values (paths, accounts) in zonecraft or a mod: they go in the machine settings.

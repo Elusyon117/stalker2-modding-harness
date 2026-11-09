@@ -1,6 +1,14 @@
 # {{MOD}} — plan
 
+## Idea
 {{DESCRIPTION}}
+
+## Features
+_(one `- [ ]` line per feature the tester wants; tick it `- [x]` once the tester confirms it works in game. The
+zonecraft panel shows this list as the mod's progress.)_
+
+## Details to check
+_(one `- [ ]` line per question to settle or case to test; tick it once settled.)_
 
 ## How the game does it today (evidence: kit file:line, probe runs, tester reports)
 _(research first: zonecraft's knowledge/zonekit.md)_

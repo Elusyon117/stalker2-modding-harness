@@ -20,7 +20,8 @@ on {{DATE}}.
 - _(none yet; see zonecraft's knowledge/compatibility.md before adding any)_
 
 ## Files
-- `PLAN.md` plan and test matrix · `BUILD.md` every edit asset by asset · `zonekit/README.md` engineering log
+- `PLAN.md` idea, feature checklist (the zonecraft panel shows it; tick a feature once the tester confirms it in
+  game), details to check, plan and test matrix · `BUILD.md` every edit asset by asset · `zonekit/README.md` engineering log
   (what each test showed, dead ends) · `zonekit/{{MOD}}/` plugin mirror · `zonekit/tools/` mod-specific generators
   (`gen_*.py`, which import zonecraft through `zonecraft_path.py`) and classifier lists · `zonekit/builds/` checkpoint
   and release paks · `mod.json` names and pak suffixes.

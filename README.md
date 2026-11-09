@@ -86,6 +86,18 @@ want, say *"that works, save a checkpoint"*.
 
 Next time, open Claude Code in the mod's folder and ask *"where were we?"*.
 
+Not sure yet what the mod should do? Type **`/zonecraft-newmod`**: a form opens beside the chat for its name, the main
+idea, the features you want and the details to check. Press **Send to Claude** and it takes it from there.
+
+## The panels
+
+| Type | What opens beside the chat |
+|---|---|
+| **`/zonecraft-panel`** | Your mod at a glance: which mod you're tracking (pick another from the list), the last build, the test copy in your game, the plan with every feature ticked off as it works in game, and Blueprint pastes with a **Copy** button |
+| **`/zonecraft-newmod`** | The New mod form: write down the mod you want, send it to Claude as a brief |
+
+Claude opens them by itself too when they help, and Clawd keeps you company in the corner.
+
 ## Handy things to say
 
 | Say | What happens |
@@ -138,7 +150,9 @@ reads the game's logs and crash reports itself. A few things worth knowing:
 | [`tools/`](tools/) | `setup/`, `build/`, `editor/`, `blueprints/` (node library, paste checker), `pak/`. PowerShell plus the Python that ships inside the Zone Kit; nothing else to install |
 | [`templates/`](templates/) | The files a new mod starts with |
 | [`probe/`](probe/) | UE4SS debug probes (your PC only, never shipped) |
-| [`tests/`](tests/) | Offline tests for the Blueprint tools |
+| [`hooks/`](hooks/) | The panels beside the chat (`/zonecraft-panel`, `/zonecraft-newmod`) |
+| [`assets/`](assets/) | The logo, the icon and Clawd's scenes, all drawn by Python scripts |
+| [`tests/`](tests/) | Offline tests for the Blueprint tools and the panels |
 | [`.claude-plugin/`](.claude-plugin/) | Plugin manifest, marketplace, icon |
 
 Each mod lives in its own folder and repository and holds only the mod; the tools and knowledge stay here, so
@@ -149,6 +163,18 @@ Mods made with the original harness: [Immersive Dialogue](https://github.com/noa
 [Immersive Reloading](https://github.com/noahsemus/stalker2-immersive-reloading).
 
 Contributions are welcome as pull requests.
+
+## Meet Clawd
+
+zonecraft's crab, in his gas mask, doing what stalkers do in the Zone. He turns up in the panels; the scenes are
+drawn by [`assets/clawd_scenes.py`](assets/clawd_scenes.py).
+
+| | | |
+|:---:|:---:|:---:|
+| <img src="assets/clawd/campfire.gif" alt="Clawd roasting a sausage over a campfire" height="68"><br>By the campfire | <img src="assets/clawd/guitar.gif" alt="Clawd playing the guitar, notes drifting up" height="80"><br>Playing the guitar | <img src="assets/clawd/planning.gif" alt="Clawd plotting a route on his PDA, his pack beside him" height="68"><br>Plotting a route |
+| <img src="assets/clawd/bolt.gif" alt="Clawd throwing a bolt into an anomaly" height="88"><br>Throwing bolts at anomalies | <img src="assets/clawd/detector.gif" alt="Clawd sweeping a detector toward a glowing artifact" height="88"><br>Hunting artifacts | <img src="assets/clawd/hunt.gif" alt="Clawd aiming a rifle at a blind dog running at him" height="88"><br>Hunting mutants |
+| <img src="assets/clawd/stash.gif" alt="Clawd opening a stash: a medkit, ammo and an artifact" height="84"><br>Looting a stash | <img src="assets/clawd/trading.gif" alt="Clawd trading an artifact for coins across the trader's counter" height="88"><br>Trading | <img src="assets/clawd/exploring.gif" alt="Clawd walking through the Zone with his pack" height="92"><br>Exploring the Zone |
+| <img src="assets/clawd/stories.gif" alt="Clawd and two stalkers around a campfire telling stories" height="96"><br>Stories at the fire | <img src="assets/clawd/repair.gif" alt="Clawd fixing his rifle with a wrench, sparks flying" height="80"><br>Fixing his gear | <img src="assets/clawd/sleeping.gif" alt="Clawd asleep in his bedroll against his pack" height="84"><br>Sleeping it off |
 
 ## Credits and license
 
