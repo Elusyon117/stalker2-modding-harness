@@ -21,6 +21,8 @@ folder) live outside every repo: `tools/config.json` has only generic defaults, 
 | `tools/build/mirror_from_kit.ps1 [-Mod]` | shell | kit plugin (`.uplugin`, `Content`, `Resources`) + classifier lists → mod folder |
 | `tools/build/deploy_to_kit.ps1 [-Mod] [-Force]` | shell | mod folder → kit; refuses to clobber newer kit files |
 | `tools/build/make_release.py X.Y.Z [--downloads]` | shell | release zip from the last cook |
+| `tools/build/release_candidate.py [--mod-root] [--names] [--json]` | shell | last packaging → `<mod>/<release.folder>/`, renamed per mod.json `"release"` (e.g. `zzzz_<Mod>_P.*` so it mounts after `zzz_` mods); writes `rc.json`. The Build & test band runs it after each packaging when `release.auto` is on |
+| `tools/watch/zcwatch.py poll [--mod-root]` | shell (the band polls it) | what changed since the last call: packaging phase and errors (UAT logs, `%TEMP%\<Mod>_cook.log`), game / editor running, new game and kit log lines worth seeing, new crash reports with their family from `tools/watch/crash_rules.json` (add a rule when a crash is understood) |
 | `tools/editor/ue_exec.py <file\|code> [--arg K=V]` | shell → open editor | Python in the tester's editor via remote execution; prepends the prelude (`MOD`, `MOD_ROOT`, `UPLUGIN`, `SCRATCH`, `ARGS`) |
 | `tools/editor/run_headless.ps1 -Script f.py [-Arg K=V,..]` | shell → commandlet | same prelude, headless editor (~4.5 min); editor closed for asset moves |
 | `tools/editor/duplicate_asset.py` | headless | `SRC` → `DST` duplicate (Blueprint graphs survive) |
@@ -37,8 +39,9 @@ folder) live outside every repo: `tools/config.json` has only generic defaults, 
 | `tools/pak/dump_names.py <uasset>` | shell | FName table of an uncooked package (keys, actions, modifiers) |
 | `tools/pak/extract_from_pak.py` | shell | single uncooked assets out of the kit's editor pak by index offset |
 | `tools/pak/scan_mods.py <Name>...` | shell | which installed mod containers mention an asset, with mount order |
+| `tools/pak/conflicts.py scan [--yours DIR] [--collection DIR] [--only-yours] [--json]` | shell, kit set up (UnrealPak) | every container of ~mods, your mods and a collection folder: shared assets with the winner (mount order, then file name), whole cfg replacements, cfg patches touching the same field (`compatibility.md`); listings cached in `%LOCALAPPDATA%\zonecraft\conflicts\` |
 | `tools/data/gamedata.py build\|status\|find\|search\|kids\|patch` | shell (any Python 3) | game data index: SID lookup with file:line, inheritance, resolved fields, the mod's patches, in-game name, patch path; ready `{bpatch}` text (`config-files.md` § Game data index) |
 | `tools/data/cfg_parse.py` | library | parser for the cfg DSL: parse, light top-level scan, patch and inheritance merge, dump, build patch text |
-| `tests/test_bp_nodes.py`, `tests/test_gamedata.py` | shell | offline tests for the Blueprint tools and the game data index (no kit needed) |
+| `tests/test_bp_nodes.py`, `tests/test_gamedata.py`, `tests/test_conflicts.py` | shell | offline tests for the Blueprint tools, the game data index and the conflict check (no kit needed) |
 | `probe/` | modder's PC only | UE4SS C++/Lua probe examples and build notes |
 | `templates/` | `new_mod.ps1` | the files a new mod starts with, including `zonekit/tools/zonecraft_path.py` (lets a mod's `gen_*.py` import the Blueprint tools) |

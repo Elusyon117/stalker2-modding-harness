@@ -1,0 +1,50 @@
+{
+  "_comment": "Crash families zonecraft knows. Each rule's regex is matched (case-insensitive) against the crash's error message plus call stack; the first match names the family. Add a rule when a crash is understood (knowledge/animation.md § Crash families, knowledge/diagnostics.md).",
+  "rules": [
+    {
+      "match": "ue4ss|UE4SS\\.dll",
+      "family": "UE4SS (a probe or script mod)",
+      "advice": "The crash is inside UE4SS. Turn dev probes off in ue4ss/Mods/mods.txt (a probe left reading a mod's actor crashed the game after a release) and retest."
+    },
+    {
+      "match": "reading (address )?0x0*a00\\b",
+      "family": "SetAnimInstanceClass on the player mesh",
+      "advice": "Known crash family: native code keeps the anim instance it made at spawn. Do not swap the player's anim class; use linked layers or montages (animation.md)."
+    },
+    {
+      "match": "reading (address )?0x0*ac0\\b",
+      "family": "Post-process AnimBP reinit",
+      "advice": "Known crash family: SetOverridePostProcessAnimBP with Reinit=true. Only the single swap at load is safe (animation.md)."
+    },
+    {
+      "match": "IsVaulting|HasNightVisionAnimation",
+      "family": "Post-process swap during a native interaction",
+      "advice": "Known crash family: swapping the post-process anim instance while a contextual action runs. Do not swap during play (animation.md)."
+    },
+    {
+      "match": "GetCurrentStateName",
+      "family": "State machine query outside the anim update",
+      "advice": "Known crash family: querying a state machine from outside the anim update faults. Read state from the anim graph instead."
+    },
+    {
+      "match": "LinkAnimClassLayers|TwoHandedItem",
+      "family": "Linking a game posture layer outside its native flow",
+      "advice": "Known crash family (animation.md): do not link AnimBP_Player_TwoHandedItem or other game postures from a mod."
+    },
+    {
+      "match": "BrokenGameData|can't find SID|links on empty|invalid .* placeholder",
+      "family": "Broken game data (a quest or cfg points at something missing)",
+      "advice": "Read <kit>/Stalker2/Saved/BrokenGameData and QuestBrokenGameData, fix the node or cfg it names, check SIDs with gamedata.py (quests.md § Debugging quests)."
+    },
+    {
+      "match": "Assertion failed",
+      "family": "Engine assertion",
+      "advice": "An engine check failed; the line after 'Assertion failed' names the condition and source file. Look for the mod asset it mentions."
+    },
+    {
+      "match": "EXCEPTION_ACCESS_VIOLATION",
+      "family": "Access violation (unknown family)",
+      "advice": "Not a known family yet. Note what the player was doing, read the stack (diagnostics.md § Reading a crash) and, if needed, park the dev pak for a control test."
+    }
+  ]
+}

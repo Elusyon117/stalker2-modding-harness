@@ -26,12 +26,25 @@ export type PlanItem = {
   isDone: boolean
 }
 
+/** How a mod's packaged files are copied and renamed into its Release Candidate folder (mod.json "release"). */
+export type ReleaseNaming = {
+  /** The folder, relative to the mod folder (or absolute). */
+  folder: string
+  /** Base name of the override files; {mod} is the plugin name. */
+  override: string
+  /** Base name of the new-content files; "{kit}" keeps the kit's own name. */
+  newcontent: string
+  /** Copy after every successful packaging. */
+  auto: boolean
+}
+
 /** What the New mod form holds while it is being filled in. */
 export type NewModDraft = {
   name: string
   idea: string
   features: string[]
   details: string[]
+  release: ReleaseNaming
   /** When the brief was sent to Claude; 0 while it has not been. */
   sentAtMs: number
 }
@@ -59,6 +72,141 @@ export type Dashboard = {
   details: PlanItem[]
 }
 
+/** The latest packaging zcwatch.py saw (the editor's Package Mod, cook_and_install.ps1, a Workshop upload). */
+export type PackageInfo = {
+  active?: boolean
+  phase?: string
+  mod?: string
+  startedMs?: number
+  endedMs?: number
+  result?: 'ok' | 'failed'
+  progress?: [number, number]
+  errors?: string[]
+  last?: string
+  log?: string
+  note?: string
+}
+
+/** The mod's release candidate copy (tools/build/release_candidate.py). */
+export type RcInfo = {
+  folder?: string
+  files?: string[]
+  copied?: number
+  isNew?: boolean
+  pending?: boolean
+  error?: string
+}
+
+/** One log line worth showing. */
+export type LogEvent = {
+  kind: 'crash' | 'patch' | 'data' | 'text' | 'mod' | 'mount' | 'error'
+  level: 'bad' | 'warn' | 'info'
+  source: 'game' | 'kit'
+  text: string
+  atMs: number
+}
+
+/** A crash report with its known family, if any (tools/watch/crash_rules.json). */
+export type CrashInfo = {
+  atMs: number
+  path: string
+  message: string
+  stack: string[]
+  family: string
+  advice: string
+}
+
+/** What the band and the Logs panel draw, refreshed every few seconds by the watcher. */
+export type WatchState = {
+  package: PackageInfo
+  rc?: RcInfo
+  isGameRunning: boolean
+  isEditorRunning: boolean
+  events: LogEvent[]
+  crashes: CrashInfo[]
+  lastPollMs: number
+  error?: string
+  /** The band is hidden for what happened before this time. */
+  dismissedMs: number
+  /** The "what to test" list is open in the band. */
+  isTestOpen: boolean
+}
+
+/** One character of a quest. */
+export type QuestCharacter = {
+  name: string
+  role: string
+  faction: string
+  /** A vanilla NPC SID to use, or '' for a new character. */
+  sid: string
+  behavior: string
+  count: string
+  notes: string
+}
+
+/** One stage (objective) of a quest. */
+export type QuestStage = {
+  kind: string
+  text: string
+  marker: string
+  optional: boolean
+}
+
+/** What the Quest designer holds for one quest of one mod. */
+export type QuestDraft = {
+  modRoot: string
+  sid: string
+  title: string
+  kind: string
+  summary: string
+  journal: string
+  start: string
+  startDetail: string
+  region: string
+  place: string
+  characters: QuestCharacter[]
+  stages: QuestStage[]
+  dialogs: string[]
+  items: string[]
+  rewards: string[]
+  success: string
+  failure: string
+  branches: string[]
+  world: string[]
+  rules: string[]
+  audio: string[]
+  languages: string
+  notes: string
+  /** The character and the stage being put together before they are added (their pickers' values). */
+  pending: { character: QuestCharacter; stage: QuestStage }
+  sentAtMs: number
+  /** When it was last saved to <mod>/zonekit/quests/; 0 while it has not been. */
+  savedAtMs: number
+}
+
+/** One conflict the conflict check found. */
+export type Conflict = {
+  /** asset (a package path) or cfg (a field of a prototype) */
+  kind: 'asset' | 'cfg' | 'cfg-file'
+  /** The asset path, or file › struct › field. */
+  what: string
+  /** Mods involved, the winner first. */
+  mods: { name: string; file: string; order: number }[]
+  verdict: 'same' | 'wins' | 'tie' | 'risky'
+  note: string
+  /** Whether a mod of yours is involved. */
+  isYours: boolean
+}
+
+/** The last conflict scan. */
+export type ConflictReport = {
+  atMs: number
+  sources: string[]
+  mods: { name: string; files: number; order: number; isYours: boolean; source: string }[]
+  conflicts: Conflict[]
+  errors: string[]
+}
+
 declare module 'claude-code' {
   interface PluginState {
     zonecraft: {
@@ -70,6 +218,12 @@ declare module 'claude-code' {
       tracked: Shaped<string>
       /** The New mod form as filled in so far (also kept in $.store, so a new session finds it). */
       draft: Shaped<NewModDraft>
+      /** Packaging, logs and crashes, from tools/watch/zcwatch.py. */
+      watch: Shaped<WatchState>
+      /** The Quest designer's draft (also in $.store per mod). */
+      quest: Shaped<QuestDraft>
+      /** The conflict check's last report and whether a scan is running. */
+      conflicts: Shaped<{ report?: ConflictReport; isScanning: boolean; collection: string; onlyYours: boolean }>
     }
   }
 }

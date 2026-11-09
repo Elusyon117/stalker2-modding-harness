@@ -4,7 +4,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface as Engine, On } from 'claude-code'
 
-import type { NewModDraft } from '../types'
+import type { NewModDraft, ReleaseNaming } from '../types'
 import { age } from './data'
 import { action, ORANGE, scene, section, top } from './theme'
 
@@ -13,8 +13,26 @@ export const NEWMOD_PANE = 'zonecraft-newmod'
 const TOOL = 'mcp__zonecraft__new_mod_form'
 const STORE = 'newmod-draft'
 
-const EMPTY: NewModDraft = { name: '', idea: '', features: [], details: [], sentAtMs: 0 }
-const draft = atom({ plugin: 'zonecraft', key: 'draft' } as const, EMPTY, { shape: 'draft-1' })
+/** tools/build/release_candidate.py's defaults. */
+export const RELEASE_DEFAULTS: ReleaseNaming = {
+  folder: 'ReleaseCandidate', override: 'zzzz_{mod}_P', newcontent: '{kit}', auto: true,
+}
+const EMPTY: NewModDraft = { name: '', idea: '', features: [], details: [], release: RELEASE_DEFAULTS, sentAtMs: 0 }
+const draft = atom({ plugin: 'zonecraft', key: 'draft' } as const, EMPTY, { shape: 'draft-2' })
+
+/** The plugin name a display name most likely becomes (PascalCase, letters and digits); Claude agrees the real one. */
+export function pluginName(display: string): string {
+  return display.split(/[^A-Za-z0-9]+/).filter(Boolean).map(w => w[0].toUpperCase() + w.slice(1)).join('') || 'MyMod'
+}
+
+/** The file names the release candidate gets, as release_candidate.py makes them. */
+export function releaseFiles(r: ReleaseNaming, mod: string): { override: string; newcontent: string } {
+  const kit = (kind: string) => `${mod}Stalker2-Windows-${kind}`
+  const fill = (p: string, kind: string) =>
+    p.trim() === '{kit}' ? kit(kind) : p.replace(/\{mod\}/g, mod).replace(/\{kit\}/g, kit(kind))
+  return { override: fill(r.override || RELEASE_DEFAULTS.override, 'OverrideContent'),
+    newcontent: fill(r.newcontent || RELEASE_DEFAULTS.newcontent, 'NewContent') }
+}
 
 /** Questions most mods have to settle; each one not yet in the list is offered as a button. */
 export const SUGGESTED = [
@@ -32,11 +50,19 @@ function asDraft(v: unknown): NewModDraft | undefined {
   if (!v || typeof v !== 'object') return undefined
   const o = v as Record<string, unknown>
   const list = (x: unknown) => (Array.isArray(x) ? x.filter((s): s is string => typeof s === 'string') : [])
+  const r = (o.release && typeof o.release === 'object' ? o.release : {}) as Record<string, unknown>
+  const str = (x: unknown, d: string) => (typeof x === 'string' ? x : d)
   return {
     name: typeof o.name === 'string' ? o.name : '',
     idea: typeof o.idea === 'string' ? o.idea : '',
     features: list(o.features),
     details: list(o.details),
+    release: {
+      folder: str(r.folder, RELEASE_DEFAULTS.folder),
+      override: str(r.override, RELEASE_DEFAULTS.override),
+      newcontent: str(r.newcontent, RELEASE_DEFAULTS.newcontent),
+      auto: typeof r.auto === 'boolean' ? r.auto : RELEASE_DEFAULTS.auto,
+    },
     sentAtMs: typeof o.sentAtMs === 'number' ? o.sentAtMs : 0,
   }
 }
@@ -62,6 +88,14 @@ export function brief(d: NewModDraft): string {
     'Features:',
     list(d.features),
     ...(d.details.length ? ['', 'Details to check:', list(d.details)] : []),
+    '',
+    'Release candidate files (after every packaging, copied and renamed into the mod folder):',
+    `- folder: ${d.release.folder || RELEASE_DEFAULTS.folder}`,
+    `- override files: ${d.release.override || RELEASE_DEFAULTS.override}`,
+    `- new content files: ${(d.release.newcontent || RELEASE_DEFAULTS.newcontent).trim() === '{kit}' ? "keep the kit's name" : d.release.newcontent}`,
+    `- copy automatically after each packaging: ${d.release.auto ? 'yes' : 'no'}`,
+    'Write these into mod.json as "release": {"folder", "override", "newcontent", "auto"} ' +
+      '(tools/build/release_candidate.py reads it; {mod} is the plugin name, "{kit}" keeps the kit\'s name).',
     '',
     'Set it up with zonecraft (knowledge/mod-workflow.md, New mod): agree the plugin name, short prefix and repo ' +
       'name with me first, then create the mod and write this brief into its PLAN.md (the idea under "## Idea", ' +
@@ -173,14 +207,43 @@ export function registerNewMod(on: On) {
         </Box>
       )
     }
-    const { Input } = $.ui.resolve({ ...e, surface: e.surface })
+    const { Input, Select } = $.ui.resolve({ ...e, surface: e.surface })
     const gaps = missing(d)
     const suggestions = SUGGESTED.filter(s => !d.details.includes(s))
+    const setRelease = (patch: Partial<ReleaseNaming>) =>
+      void change(cur => ({ ...cur, release: { ...cur.release, ...patch } }))
+    const files = releaseFiles(d.release, pluginName(d.name))
+    const keepsKit = d.release.newcontent.trim() === '{kit}'
+
+    // Where the packaged files go and what they are called, at the top: it decides the mod's load order.
+    const release = section(els, 'release', 'Release candidate files',
+      'After every packaging the files are copied into this folder of the mod, renamed for the load order you want.',
+      <Input key="rc-folder" label="Folder" placeholder="ReleaseCandidate" value={d.release.folder}
+        onInput={v => setRelease({ folder: v })} onSubmit={v => setRelease({ folder: v })} />,
+      <Input key="rc-override" label="Override files" placeholder="zzzz_{mod}_P" value={d.release.override}
+        onInput={v => setRelease({ override: v })} onSubmit={v => setRelease({ override: v })} />,
+      <Select key="rc-newmode" label="New content files" value={keepsKit ? 'kit' : 'rename'}
+        options={[{ value: 'kit', label: "Keep the kit's name" }, { value: 'rename', label: 'Rename them too' }]}
+        onSelect={v => setRelease({ newcontent: v === 'kit' ? '{kit}' : 'zzzz_{mod}_NewContent_P' })} />,
+      keepsKit
+        ? null
+        : <Input key="rc-newcontent" label="New content name" placeholder="zzzz_{mod}_NewContent_P"
+          value={d.release.newcontent} onInput={v => setRelease({ newcontent: v })}
+          onSubmit={v => setRelease({ newcontent: v })} />,
+      <Select key="rc-auto" label="Copy" value={d.release.auto ? 'auto' : 'ask'}
+        options={[{ value: 'auto', label: 'Automatically after each packaging' }, { value: 'ask', label: 'When I press the button' }]}
+        onSelect={v => setRelease({ auto: v === 'auto' })} />,
+      <Box flexDirection="column" key="rc-preview">
+        <Text dimColor>{`${d.release.folder || RELEASE_DEFAULTS.folder}/${files.override}.pak · .utoc · .ucas`}</Text>
+        <Text dimColor>{`${d.release.folder || RELEASE_DEFAULTS.folder}/${files.newcontent}.pak · .utoc · .ucas`}</Text>
+        <Text dimColor wrap="wrap">{'{mod} is the plugin name. The _P (or _<N>_P) ending sets the mount priority and the name breaks ties, so zzzz_ loads after mods named zzz_.'}</Text>
+      </Box>)
 
     // One blank line between sections, none inside one.
     return (
       <Box flexDirection="column" gap={1}>
         {top(els, isTerminal, art, intro)}
+        {release}
         {section(els, 'name', 'Name', 'What players will see on Nexus.',
           <Input key="name" placeholder="Immersive Campfires" value={d.name} autoFocus
             onInput={v => void change(cur => ({ ...cur, name: v }))}

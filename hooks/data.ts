@@ -2,8 +2,8 @@ import type { EngineInterface as Engine } from 'claude-code'
 
 import type { Dashboard, ModChoice, Paste, PlanItem, Status } from '../types'
 
-const slash = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '')
-const join = (...parts: string[]) => parts.map(slash).join('/')
+export const slash = (p: string) => p.replace(/\\/g, '/').replace(/\/+$/, '')
+export const join = (...parts: string[]) => parts.map(slash).join('/')
 const parent = (p: string) => {
   const s = slash(p)
   const cut = s.lastIndexOf('/')
@@ -235,6 +235,43 @@ export async function dashboard($: Engine, root: string | undefined, settings?: 
   }
   d.pastes = await listPastes($, root)
   return d
+}
+
+/** How to start a zonecraft Python tool: the machine settings' "python" if set, else the Windows launcher `py`.
+ * `-I` keeps the tool from importing files of the folder it runs in. */
+export function pythonArgv(settings: Record<string, unknown>, script: string, args: string[] = []): string[] {
+  const py = typeof settings.python === 'string' && settings.python ? settings.python : 'py'
+  return [py, '-I', script, ...args]
+}
+
+/** Runs a zonecraft Python tool that prints one JSON object; undefined (and the reason) when it fails. */
+export async function runJson<T>($: Engine, settings: Record<string, unknown>, script: string, args: string[],
+  timeoutMs = 30_000): Promise<{ value?: T; error?: string }> {
+  try {
+    const r = await $.process.run(pythonArgv(settings, join($.plugin.root, script), args), { timeoutMs })
+    if (r.exitCode !== 0) return { error: (r.stderr || r.stdout).trim().split('\n').slice(-3).join(' ') || `exit ${r.exitCode}` }
+    return { value: JSON.parse(r.stdout) as T }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+/** The mod a background job works on: the one picked in the panel (kept in $.store), else the session's own. */
+export async function activeModRoot($: Engine): Promise<string | undefined> {
+  const picked = await $.store.get('mod-picked').catch(() => undefined)
+  const here = await findModRoot($, await $.session.cwd()).catch(() => undefined)
+  if (here) return here
+  if (typeof picked === 'string' && picked && await $.fs.exists(join(picked, 'mod.json'))) return slash(picked)
+  return undefined
+}
+
+export async function modJson($: Engine, root: string): Promise<Record<string, unknown>> {
+  return (await readJson($, join(root, 'mod.json'))) ?? {}
+}
+
+export function clock(ms: number): string {
+  const s = Math.max(0, Math.round(ms / 1000))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
 export function age(ms: number | undefined, nowMs: number): string {

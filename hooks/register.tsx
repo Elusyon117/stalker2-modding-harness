@@ -4,8 +4,11 @@ import type { Register } from 'claude-code'
 import type { Dashboard, Paste, Status } from '../types'
 import type { SceneName } from './art'
 import { age, chooseMod, dashboard, findModRoot, knownMods, readSettings } from './data'
+import { conflictsSessionStart, registerConflicts } from './conflicts'
 import { newModSessionStart, registerNewMod } from './newmod'
+import { questSessionStart, registerQuest } from './questform'
 import { action, ORANGE, RUST, scene, section, top } from './theme'
+import { registerWatch, watchSessionStart } from './watch'
 
 const PANE = 'zonecraft'
 const TITLE = 'zonecraft'
@@ -38,6 +41,9 @@ const COLOR: Record<Status, string | undefined> = { ok: 'success', warn: RUST, b
 
 export const register: Register = on => {
   registerNewMod(on)
+  registerWatch(on)
+  registerQuest(on)
+  registerConflicts(on)
 
   on('session.start', async ($, e, next) => {
     // Bash children (a mod's gen_*.py through zonekit/tools/zonecraft_path.py) find zonecraft through this.
@@ -49,6 +55,9 @@ export const register: Register = on => {
       await $.store.set(SEEN, [here, ...seen].slice(0, SEEN_MAX))
     }
     await newModSessionStart($)
+    await watchSessionStart($)
+    await questSessionStart($)
+    await conflictsSessionStart($)
     await $.command.register({
       name: 'zonecraft-panel',
       description: 'Show the zonecraft panel: the current mod, its last cook and test copy, and Blueprint pastes to copy',
