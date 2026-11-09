@@ -98,6 +98,12 @@ idea, the features you want and the details to check. Press **Send to Claude** a
 
 Claude opens them by itself too when they help, and Clawd keeps you company in the corner.
 
+<p align="center">
+  <img src="assets/screens/dashboard.svg" alt="The zonecraft dashboard: the tracked mod, its build and test copy, the plan's features ticked off, Blueprint pastes with a Copy button, and Clawd at his campfire" width="380">
+  &nbsp;
+  <img src="assets/screens/newmod.svg" alt="The New mod form: the mod's name, main idea, features and details to check, a Send to Claude button, and Clawd plotting a route on his PDA" width="380">
+</p>
+
 ## Handy things to say
 
 | Say | What happens |

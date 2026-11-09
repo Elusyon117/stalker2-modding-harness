@@ -17,3 +17,5 @@ This repository is the zonecraft Claude Code plugin (the repo root is the plugin
 - The logo and the icon come from `assets/make_logo.py` (`<out>.gif` for the logo, `<out>.png` for the icon).
   Clawd's scenes come from `assets/clawd_scenes.py`: `hooks/clawd.ts` for the panels, `assets/clawd` for the README
   GIFs, `<out>.png sheet` to check every scene on light and dark. Regenerate all three after changing a drawing.
+  The README's panel pictures come from `assets/make_screens.py assets/screens` (example content; redraw them when a
+  panel's layout changes, or replace them with real screenshots).
