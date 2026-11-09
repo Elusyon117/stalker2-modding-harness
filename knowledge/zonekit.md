@@ -11,6 +11,7 @@ in the editor, (3) only then build something.**
 | `<kit>\bp_api_dump2.txt` | Python-generated dump of every reachable Blueprint class, UFunction and UProperty (1677 classes). Always grep first for whether a function/property exists and its BP signature and access (e.g. the `PC` player class members start around line 5141). |
 | `<kit>\bp_api_dump.txt` | Older dump; the only one with **enums** (e.g. `PlayerTriggerState` at line 5084). |
 | _(dumps missing?)_ | They do not ship with the kit (a fresh install has neither). Regenerate what you need in the open editor: `ue_exec.py` with `dir(unreal)` / `vars(unreal.SomeClass)` and each member's `__doc__` (signature and access). |
+| **Game data index** (`tools/data/gamedata.py`) | Ask it before grepping cfgs: `find <SID>` gives file:line, the inheritance chain, resolved fields (with the mod's patches applied), DLC copies, the in-game name and where a patch goes; `search <text>` finds SIDs and names. Build once per kit update (`config-files.md` § Game data index). |
 | `<kit>\Stalker2\Content\GameLite\GameData\**\*.cfg` | All game data in GSC's cfg struct DSL: prototypes (items, weapons, NPCs, effects, abilities), `CoreVariables.cfg`, `InputMappingContextPrototypes.cfg` (IMC names, priorities), dialogue, quests. See `config-files.md`. |
 | `<kit>\Stalker2\Config\` | Engine/game ini (e.g. `DefaultInput.ini`, still with legacy axis mappings). |
 | `<kit>\Stalker2\S2_WwiseProject\GeneratedSoundBanks\Windows\Event\*.txt` | Every Wwise event with samples, switch groups, states (the `.txt` form is the compact one). |

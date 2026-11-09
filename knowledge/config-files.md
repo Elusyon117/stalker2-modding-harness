@@ -2,7 +2,28 @@
 
 All gameplay data (items, weapons, NPCs, effects, abilities, input contexts, core variables) lives in text `.cfg`
 files under `<kit>\Stalker2\Content\GameLite\GameData\` in GSC's struct DSL (`Name : struct.begin {refkey=...}`
-... `struct.end`, inheritance through `refurl` / `refkey`). Grep them first for any gameplay number.
+... `struct.end`, inheritance through `refurl` / `refkey`). Look up any gameplay number in the game data index first
+(below), and grep only for what it does not cover.
+
+## Game data index (`tools/data/gamedata.py`)
+Run it with any Python 3 (`py -I <zonecraft>\tools\data\gamedata.py ...`) from inside the mod folder.
+- `build`: indexes every struct in `GameLite/GameData` and `GameLite/DLCGameData` of the kit, plus the kit's text
+  database, into `%LOCALAPPDATA%\zonecraft\gamedata\index.sqlite` (per machine, never in a repo). Run it after
+  setup and after every Zone Kit update; any query prints a NOTE when the kit is newer than the index. `status`
+  shows counts and whether the text database was understood (its layout is guessed; if `status` says "format not
+  recognised", read the JSON's shape and adjust `load_texts`).
+- `find <SID or name>`: definition file:line, the `refkey` chain, the **resolved fields** (inherited values filled
+  in, then the current mod's own patches applied; `--raw` for the struct's own lines, `--field RE` to filter,
+  `--depth N`), copies in DLC data (patch those too), other definitions and patches, the in-game name, how many
+  prototypes inherit from it, and **where this mod's patch for it goes** (by GSC's two rules below).
+- `search <text>`: SIDs, struct names and in-game texts containing the text (`--in RE` limits to files).
+- `kids <SID>`: everything inheriting from it. A patch on the parent does not reach fields a child overrides.
+- `patch <SID> --set Path.To[0].Field=Value [--remove Path.[2]]`: prints a `{bpatch}` patch and its file; a path that
+  is not in the resolved struct is flagged as a probable typo.
+The current mod's cfgs (kit plugin folder, else the `zonekit/<Mod>/` mirror) are read live, never cached. Use the
+index for every SID you put in a cfg, quest node or Blueprint: a wrong SID costs a cook and a test run, and it is what
+the Broken Game Data validator keeps catching (`quests.md`). The resolved fields follow inheritance the way the files
+read; the game's own merge can differ in corners, so confirm surprising values in game.
 
 ## Rules
 - **Never ship a whole-file override** of a game `.cfg`. It silently replaces every other mod's edits to the same

@@ -42,6 +42,8 @@ in `<kit>\Stalker2\Config\DefaultEngine.ini`, backup next to it), then ask them 
 Manual equivalent: Edit → Project Settings → Plugins → Python → Enable Remote Execution.
 
 ## 5. Verify and hand over
+Build the game data index once: `py -I <zonecraft>\tools\data\gamedata.py build` (a few minutes; again after every
+Zone Kit update, `config-files.md` § Game data index).
 Run `check_setup.ps1` with the editor open; everything must be OK. Then tell the user, in two or three sentences, how
 the work goes from here (they describe what they want, you research and build, they test in game and paste into the
 editor when asked) and ask what their first mod should do. Create it with `new_mod.ps1`

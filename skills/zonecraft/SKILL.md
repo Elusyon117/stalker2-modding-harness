@@ -40,8 +40,10 @@ A **mod folder** has `mod.json` and a `CLAUDE.md` at its root, and holds only th
 - Talk in game terms: which place, which keys, what success looks like, what a run must contain.
 
 ## Hard rules
-1. **Kit first.** Grep the kit's dumps and cfgs (`knowledge/zonekit.md`) and ask the tester to open assets in the
-   editor before any blind build/test cycle. Most `/Script/Stalker2` classes are native with no graph; look for the
+1. **Kit first.** Look game data up in the game data index (`tools/data/gamedata.py find|search <SID>`; build it
+   if `status` says it is missing or stale), grep the kit's dumps and cfgs for the rest (`knowledge/zonekit.md`) and
+   ask the tester to open assets in the editor before any blind build/test cycle. Never write a SID you have not
+   looked up. Most `/Script/Stalker2` classes are native with no graph; look for the
    assets that USE them.
 2. **One change per cook** (5-6 min), tested by the tester before the next. At the first regression, roll back to
    the last checkpoint. Don't bundle a cleanup with a behaviour change.

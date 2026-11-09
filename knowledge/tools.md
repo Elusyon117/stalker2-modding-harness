@@ -37,6 +37,8 @@ folder) live outside every repo: `tools/config.json` has only generic defaults, 
 | `tools/pak/dump_names.py <uasset>` | shell | FName table of an uncooked package (keys, actions, modifiers) |
 | `tools/pak/extract_from_pak.py` | shell | single uncooked assets out of the kit's editor pak by index offset |
 | `tools/pak/scan_mods.py <Name>...` | shell | which installed mod containers mention an asset, with mount order |
-| `tests/test_bp_nodes.py` | shell | offline tests for the Blueprint tools (no kit needed) |
+| `tools/data/gamedata.py build\|status\|find\|search\|kids\|patch` | shell (any Python 3) | game data index: SID lookup with file:line, inheritance, resolved fields, the mod's patches, in-game name, patch path; ready `{bpatch}` text (`config-files.md` § Game data index) |
+| `tools/data/cfg_parse.py` | library | parser for the cfg DSL: parse, light top-level scan, patch and inheritance merge, dump, build patch text |
+| `tests/test_bp_nodes.py`, `tests/test_gamedata.py` | shell | offline tests for the Blueprint tools and the game data index (no kit needed) |
 | `probe/` | modder's PC only | UE4SS C++/Lua probe examples and build notes |
 | `templates/` | `new_mod.ps1` | the files a new mod starts with, including `zonekit/tools/zonecraft_path.py` (lets a mod's `gen_*.py` import the Blueprint tools) |
