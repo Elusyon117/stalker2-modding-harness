@@ -2,7 +2,7 @@
 animation steps of a small pixel grid on a transparent background, drawn with make_logo.py's palette and crab.
 
 usage: py -I clawd_scenes.py <out.ts>          the panels' data (hooks/clawd.ts)
-       py -I clawd_scenes.py <folder>          one looping GIF per scene (assets/clawd/<name>.gif)
+       py -I clawd_scenes.py <folder>          one looping GIF per scene (<folder>/<name>.gif)
        py -I clawd_scenes.py <out.png> sheet   every scene's steps on one sheet, light and dark, for checking
 """
 import math

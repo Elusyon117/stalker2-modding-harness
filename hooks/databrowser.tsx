@@ -7,7 +7,7 @@ import type { EngineInterface as Engine, On } from 'claude-code'
 
 import type { DataEntry, DataField, DataHit, DataPatch, DataState, DataStatus } from '../types'
 import { age, chooseMod, knownMods, readSettings, runJson } from './data'
-import { action, ORANGE, RUST, section } from './theme'
+import { action, ORANGE, RUST, scene, section, top } from './theme'
 
 export const DATA_PANE = 'zonecraft-data'
 const TOOL = 'mcp__zonecraft__game_data'
@@ -315,7 +315,8 @@ export function registerData(on: On) {
         : null
       return (
         <Box flexDirection="column" gap={1}>
-          {section(els, 'data', 'Game data', 'Weapons, items, NPCs, quests and effects, as the game defines them.', indexRow, modPicker)}
+          {top(els, e.surface === 'terminal', scene($, e, 'stash', 'Clawd opening a stash: a medkit, ammo and an artifact'),
+            section(els, 'data', 'Game data', 'Weapons, items, NPCs, quests and effects, as the game defines them.', indexRow, modPicker))}
           <Box flexDirection="column" key="search">{searchBox}{filters}{working}{failed}</Box>
           {results}
           {quick('Favourites', s.favorites, 'favs')}
@@ -453,7 +454,7 @@ export function registerData(on: On) {
 
     return (
       <Box flexDirection="column" gap={1}>
-        {header}
+        {top(els, e.surface === 'terminal', scene($, e, 'trading', 'Clawd trading an artifact for coins across the counter'), header)}
         {working}
         {failed}
         {values}

@@ -2,21 +2,45 @@
   <img src="assets/logo.gif" alt="zonecraft: a pixel crab in a gas mask sits by a campfire roasting a sausage in front of a nuclear plant while an anomaly pulses" width="600">
 </p>
 
-# zonecraft
+<h1 align="center">zonecraft</h1>
 
-A Claude Code plugin for making your own **S.T.A.L.K.E.R. 2: Heart of Chornobyl** mods by talking to Claude, even if
-you have never modded anything, used a terminal or written code.
+<p align="center">
+  <b>Make your own S.T.A.L.K.E.R. 2 mods by talking to Claude.</b><br>
+  No modding, terminal or coding experience needed.
+</p>
 
-It gives Claude:
+<p align="center">
+  <img src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FElusyon117%2Fzonecraft%2Fmain%2F.claude-plugin%2Fplugin.json&query=%24.version&label=version&color=e8772e" alt="version">
+  <img src="https://img.shields.io/badge/Claude_Code-plugin-e8772e" alt="Claude Code plugin">
+  <img src="https://img.shields.io/badge/S.T.A.L.K.E.R._2-Zone_Kit-4a4944" alt="S.T.A.L.K.E.R. 2 Zone Kit">
+  <img src="https://img.shields.io/badge/platform-Windows-4a4944" alt="Windows">
+  <img src="https://img.shields.io/badge/license-MIT-4a4944" alt="MIT license">
+</p>
+
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#get-started">Get started</a> ·
+  <a href="#make-a-mod">Make a mod</a> ·
+  <a href="#the-panels">The panels</a> ·
+  <a href="#handy-things-to-say">Things to say</a> ·
+  <a href="#whats-inside">What's inside</a>
+</p>
+
+---
+
+zonecraft is a Claude Code plugin for **S.T.A.L.K.E.R. 2: Heart of Chornobyl** and GSC's official mod editor, the
+**Zone Kit**. You say what the mod should do; Claude plans it, writes it, builds it, installs it into your game for
+testing and packages it for Nexus Mods. It gives Claude:
 
 - **Rules** for working with you: what to check before building anything, what never to do.
-- **Hard-won knowledge** from shipping real mods: how the game and GSC's official mod editor (the *Zone Kit*)
-  behave, which approaches crash the game, how to stay compatible with other popular mods.
-- **GSC's official Zone Kit guides, digested**: all 26 support-site guides and the Quest Tool manual folded into
-  zonecraft's knowledge in its own words (quests and dialogs, world actors, audio, weapons, cfg patches, packaging,
-  publishing), each with a link to the original.
+- **Hard-won knowledge** from shipping real mods: how the game and the Zone Kit behave, which approaches crash the
+  game, how to stay compatible with other popular mods.
+- **GSC's official Zone Kit guides, digested**: all 26 support-site guides and the Quest Tool manual folded in, in
+  its own words (quests and dialogs, world actors, audio, weapons, cfg patches, packaging, publishing), each with a
+  link to the original.
 - **Tools** that set up your PC, write Blueprint logic you paste into the editor (and check it arrived intact), build
-  your mod, install it into the game for testing and package it for Nexus Mods.
+  your mod, install it for testing and package it for release.
+- **Panels** beside the chat that show where every mod stands, with Clawd keeping you company.
 
 ## Install
 
@@ -37,19 +61,7 @@ claude plugin install zonecraft --marketplace Elusyon117/zonecraft
 
 Update later with `claude plugin marketplace update elusyon-zonecraft`, then `claude plugin update zonecraft`.
 
-The plugin adds the `zonecraft` skill: Claude uses it by itself whenever you talk about Stalker 2 modding, or you can
-type `/zonecraft`.
-
-## How it works
-
-| You | Claude |
-|---|---|
-| Say what the mod should do | Researches how the game does it and writes a plan |
-| Play the game and say what you see ("it worked", "nothing happened", "it crashed when I sat down") | Reads the game's logs and crash reports itself |
-| Click or paste in the Zone Kit editor when asked (it tells you exactly where; pasting is Ctrl+V) | Writes the logic, builds the mod, installs it into your game |
-| Say when to publish | Packages the release and writes the notes |
-
-After setup you never type commands. You talk in plain language.
+Claude uses the `zonecraft` skill by itself whenever you talk about Stalker 2 modding, or you can type `/zonecraft`.
 
 ## Get started
 
@@ -66,6 +78,17 @@ You need a **Windows PC with the game installed**, about **600 GB of free disk s
 That's it. Claude picks a folder for your mods with you, installs what's missing, finds your game and the Zone Kit,
 and asks you a few questions (your name, your GitHub account; it helps you make one if you have none). Twice it will
 ask you to do something yourself: approve a GitHub login in your browser, and close and reopen the Zone Kit editor.
+
+## How it works
+
+| You | Claude |
+|---|---|
+| Say what the mod should do | Researches how the game does it and writes a plan |
+| Play the game and say what you see ("it worked", "nothing happened", "it crashed when I sat down") | Reads the game's logs and crash reports itself |
+| Click or paste in the Zone Kit editor when asked (it tells you exactly where; pasting is Ctrl+V) | Writes the logic, builds the mod, installs it into your game |
+| Say when to publish | Packages the release and writes the notes |
+
+After setup you never type commands. You talk in plain language.
 
 ## Make a mod
 
@@ -85,63 +108,45 @@ It suggests a name, creates the mod (its own folder and GitHub page), researches
 4. You play and tell it what you saw.
 
 One change per round, so when something breaks you always know what caused it. When something works the way you
-want, say *"that works, save a checkpoint"*.
+want, say *"that works, save a checkpoint"*. Next time, open Claude Code in the mod's folder and ask
+*"where were we?"*.
 
-Next time, open Claude Code in the mod's folder and ask *"where were we?"*.
-
-Not sure yet what the mod should do? Type **`/zonecraft-newmod`**: a form opens beside the chat for its name, the main
-idea, the features you want and the details to check. Press **Send to Claude** and it takes it from there.
+Not sure yet what the mod should do? Type **`/zonecraft-newmod`** and fill in the form below.
 
 ## The panels
 
-| Type | What opens beside the chat |
+zonecraft's panels open beside the chat. Type the command on each card, or let Claude open them when they help.
+
+<p align="center"><img src="assets/screens/dashboard.svg" alt="The zonecraft dashboard: a mod's page with its build, test copy, plan and Blueprint pastes, and Clawd at his campfire" width="880"></p>
+
+With more than one mod, the dashboard opens on **All mods**: a status line per mod (packaging now, last build, test
+copy, features done, conflicts). Pick one to open its page.
+
+<p align="center"><img src="assets/screens/nodes.svg" alt="Show nodes: a Blueprint paste's comment box drawn as the Zone Kit graph editor will show it, with the wires to draw by hand" width="880"></p>
+
+<p align="center"><img src="assets/screens/build.svg" alt="The Build and test band above the prompt: a packaging in progress with its stage and time, then the finished build with Install test copy and the features to try" width="880"></p>
+
+<p align="center"><img src="assets/screens/newmod.svg" alt="The New mod form: release candidate naming, the mod's name, main idea, features and details to check, and Send to Claude" width="880"></p>
+
+<p align="center"><img src="assets/screens/quest.svg" alt="The Quest designer: the quest's basics, start and place, characters, ordered stages with markers, rewards, branches and rules, and Send to Claude" width="880"></p>
+
+<p align="center"><img src="assets/screens/data.svg" alt="The Game data browser: the AK74 entry with its values, one being changed, and the patch to add to the mod" width="880"></p>
+
+<p align="center"><img src="assets/screens/conflicts.svg" alt="The Conflicts panel: the mods scanned with their mount order, and each conflict with its winner and an Ask Claude button" width="880"></p>
+
+<p align="center"><img src="assets/screens/logs.svg" alt="The Logs panel: the last packaging, a crash with its known family and advice, and warnings from the game and kit logs" width="880"></p>
+
+<p align="center"><sub>Example content: your own mods show up instead.</sub></p>
+
+| Command | Opens |
 |---|---|
-| **`/zonecraft-panel`** | **All mods**: every mod you work on with a status line (packaging now, last build, test copy, features done, conflicts); pick one to open its page: the last build, the test copy in your game, the plan with every feature ticked off as it works in game, and Blueprint pastes with a **Copy** button |
-| **`/zonecraft-newmod`** | The New mod form: write down the mod you want and how its packaged files are renamed into its Release Candidate folder (e.g. `zzzz_<Mod>_P` so it loads after its dependencies), send it to Claude as a brief |
-| **`/zonecraft-quest`** | The Quest designer: pick one of your mods, then lay out a quest (start, region, characters, stages with markers, dialogs, items, rewards, branches, world changes, rules, audio), save it in the mod and send it to Claude |
-| **`/zonecraft-conflicts`** | Conflict check of your mods, the installed mods and a collection folder: shared assets with the winner, whole cfg files, cfg patches touching the same field |
-| **`/zonecraft-data`** | The Game data browser: search the game's weapons, items, NPCs, quests and effects, see each one's values (its own, inherited, or changed by your mod), change a value and add the patch to your mod with one button |
-| **`/zonecraft-logs`** | Packaging, crashes with what they mean, and warnings from the game and Zone Kit logs |
-| Build & test band | Above the prompt while you press Package Mod: stage, time, errors; then the release candidate copy, Install test copy and what to test |
-
-Claude opens them by itself too when they help, and Clawd keeps you company in the corner.
-
-<p align="center">
-  <img src="assets/screens/allmods.svg" alt="The dashboard's All mods page: every mod with a status line (packaging, build, test copy, features, conflicts) and its latest state; picking one opens its page" width="380">
-  &nbsp;
-  <img src="assets/screens/dashboard.svg" alt="The zonecraft dashboard: the tracked mod, its build and test copy, the plan's features ticked off, Blueprint pastes with a Copy button, and Clawd at his campfire" width="380">
-</p>
-
-<p align="center">
-  <img src="assets/screens/newmod.svg" alt="The New mod form: release candidate naming at the top, then the mod's name, main idea, features and details to check, a Send to Claude button, and Clawd plotting a route on his PDA" width="380">
-</p>
-
-While you press **Package Mod** in the Zone Kit, the Build & test band above the prompt follows it, then offers the
-next steps:
-
-<p align="center">
-  <img src="assets/screens/band.svg" alt="The Build and test band above the prompt: a packaging in progress with its stage and time, then the finished build with Install test copy and What to test" width="640">
-</p>
-
-<table align="center">
-  <tr>
-    <td valign="top"><img src="assets/screens/quest.svg" alt="The Quest designer: a mod picked at the top, the quest's basics, start and place, characters, ordered stages with markers, rewards, branches and rules with suggestions, and Send to Claude" width="380"></td>
-    <td valign="top">
-      <img src="assets/screens/conflicts.svg" alt="The Conflicts panel: a collection folder, the mods scanned with their mount order, and each conflict with its winner, the mods it beats and an Ask Claude button" width="380"><br><br>
-      <img src="assets/screens/logs.svg" alt="The Logs panel: what is being watched, the last packaging and its release candidate, a crash with its known family and advice, and warnings from the game and kit logs" width="380">
-    </td>
-  </tr>
-</table>
-
-The Game data browser: search, then open an entry and change a value for your mod.
-
-<p align="center">
-  <img src="assets/screens/datasearch.svg" alt="The Game data browser, search: index status, mod picker, search box, category filters and results, with the entries your mod already changes marked" width="380">
-  &nbsp;
-  <img src="assets/screens/dataentry.svg" alt="The Game data browser, an entry: its in-game name, file, inheritance, values (own, inherited, changed by the mod) with one being edited, the patch and Add to my mod" width="380">
-</p>
-
-<p align="center"><sub>Example content; your own mods show up instead.</sub></p>
+| `/zonecraft-panel` | The dashboard: All mods, each mod's page, Blueprint pastes with **Copy** and **Show nodes** |
+| `/zonecraft-newmod` | The New mod form |
+| `/zonecraft-quest` | The Quest designer |
+| `/zonecraft-data` | The Game data browser |
+| `/zonecraft-conflicts` | The conflict check |
+| `/zonecraft-logs` | Packaging, crashes and log warnings |
+| *(automatic)* | The Build & test band above the prompt, while you press **Package Mod** |
 
 ## Handy things to say
 
@@ -163,7 +168,18 @@ section, choose to upload a mod, fill in the page (name, description, screenshot
 Downloads folder. Paste the release notes Claude wrote into the changelog. Tell Claude the mod's Nexus ID so it can
 record it.
 
-## Words you will see
+## If something goes wrong
+
+Describe it to Claude the way you'd describe it to a friend: what you did, what you expected, what happened. It
+reads the game's logs and crash reports itself. A few things worth knowing:
+
+- New mods only appear in the Zone Kit's mod list after you restart the editor.
+- After a game update, update the Zone Kit in the Epic launcher too, then ask Claude to rebuild your mods.
+- If the Zone Kit editor crashes every time it starts, tell Claude; there is a known fix.
+
+<details>
+<summary><b>Words you will see</b></summary>
+<br>
 
 | Word | Meaning |
 |---|---|
@@ -178,13 +194,7 @@ record it.
 | **Repository / GitHub** | Where each mod's files and history are stored online. |
 | **MCM** | Mod Configuration Menu, a popular mod that adds an in-game settings screen for other mods. |
 
-## If something goes wrong
-
-Describe it to Claude the way you'd describe it to a friend: what you did, what you expected, what happened. It
-reads the game's logs and crash reports itself. A few things worth knowing:
-- New mods only appear in the Zone Kit's mod list after you restart the editor.
-- After a game update, update the Zone Kit in the Epic launcher too, then ask Claude to rebuild your mods.
-- If the Zone Kit editor crashes every time it starts, tell Claude; there is a known fix.
+</details>
 
 ## What's inside
 
@@ -192,12 +202,12 @@ reads the game's logs and crash reports itself. A few things worth knowing:
 |---|---|
 | [`skills/zonecraft/`](skills/zonecraft/SKILL.md) | The skill Claude loads: rules, session start, where everything is |
 | [`knowledge/`](knowledge/) | What is known about the game, the Zone Kit and the pipeline ([setup](knowledge/setup.md), [blueprints](knowledge/blueprints.md), [animation](knowledge/animation.md), [quests](knowledge/quests.md), [world actors](knowledge/world-actors.md), [audio](knowledge/audio.md), [weapons](knowledge/weapons.md), [official guides](knowledge/zonekit-guides.md), [tools](knowledge/tools.md), ...) |
-| [`tools/`](tools/) | `setup/`, `build/`, `editor/`, `blueprints/` (node library, paste checker), `pak/`. PowerShell plus the Python that ships inside the Zone Kit; nothing else to install |
+| [`tools/`](tools/) | `setup/`, `build/`, `editor/`, `blueprints/` (node library, paste checker, paste pictures), `pak/`, `data/`. PowerShell plus the Python that ships inside the Zone Kit; nothing else to install |
+| [`hooks/`](hooks/) | The panels beside the chat and the Build & test band |
 | [`templates/`](templates/) | The files a new mod starts with |
 | [`probe/`](probe/) | UE4SS debug probes (your PC only, never shipped) |
-| [`hooks/`](hooks/) | The panels beside the chat (`/zonecraft-panel`, `/zonecraft-newmod`, `/zonecraft-quest`, `/zonecraft-conflicts`, `/zonecraft-logs`, `/zonecraft-data`) and the Build & test band |
-| [`assets/`](assets/) | The logo, the icon and Clawd's scenes, all drawn by Python scripts |
-| [`tests/`](tests/) | Offline tests for the Blueprint tools and the panels |
+| [`assets/`](assets/) | The logo, the icon, Clawd's scenes and the README pictures, all drawn by Python scripts |
+| [`tests/`](tests/) | Offline tests for the Blueprint tools, the game data index and the panels |
 | [`.claude-plugin/`](.claude-plugin/) | Plugin manifest, marketplace, icon |
 
 Each mod lives in its own folder and repository and holds only the mod; the tools and knowledge stay here, so
@@ -206,20 +216,14 @@ updating zonecraft updates every mod.
 Mods made with the original harness: [Immersive Dialogue](https://github.com/noahsemus/stalker2-immersive-dialogue),
 [Immersive Campfires](https://github.com/noahsemus/stalker2-immersive-campfires),
 [Immersive Reloading](https://github.com/noahsemus/stalker2-immersive-reloading).
-
 Contributions are welcome as pull requests.
 
 ## Meet Clawd
 
-zonecraft's crab, in his gas mask, doing what stalkers do in the Zone. He turns up in the panels; the scenes are
-drawn by [`assets/clawd_scenes.py`](assets/clawd_scenes.py).
+zonecraft's crab, in his gas mask, doing what stalkers do in the Zone. He sits in the corner of every panel and
+changes scene with what you are doing; the scenes are drawn by [`assets/clawd_scenes.py`](assets/clawd_scenes.py).
 
-| | | |
-|:---:|:---:|:---:|
-| <img src="assets/clawd/campfire.gif" alt="Clawd roasting a sausage over a campfire" height="68"><br>By the campfire | <img src="assets/clawd/guitar.gif" alt="Clawd playing the guitar, notes drifting up" height="80"><br>Playing the guitar | <img src="assets/clawd/planning.gif" alt="Clawd plotting a route on his PDA, his pack beside him" height="68"><br>Plotting a route |
-| <img src="assets/clawd/bolt.gif" alt="Clawd throwing a bolt into an anomaly" height="88"><br>Throwing bolts at anomalies | <img src="assets/clawd/detector.gif" alt="Clawd sweeping a detector toward a glowing artifact" height="88"><br>Hunting artifacts | <img src="assets/clawd/hunt.gif" alt="Clawd aiming a rifle at a blind dog running at him" height="88"><br>Hunting mutants |
-| <img src="assets/clawd/stash.gif" alt="Clawd opening a stash: a medkit, ammo and an artifact" height="84"><br>Looting a stash | <img src="assets/clawd/trading.gif" alt="Clawd trading an artifact for coins across the trader's counter" height="88"><br>Trading | <img src="assets/clawd/exploring.gif" alt="Clawd walking through the Zone with his pack" height="92"><br>Exploring the Zone |
-| <img src="assets/clawd/stories.gif" alt="Clawd and two stalkers around a campfire telling stories" height="96"><br>Stories at the fire | <img src="assets/clawd/repair.gif" alt="Clawd fixing his rifle with a wrench, sparks flying" height="80"><br>Fixing his gear | <img src="assets/clawd/sleeping.gif" alt="Clawd asleep in his bedroll against his pack" height="84"><br>Sleeping it off |
+<p align="center"><img src="assets/screens/clawd.svg" alt="Clawd, zonecraft's crab in a gas mask, in twelve scenes: by the campfire, playing the guitar, plotting a route, exploring the Zone, throwing bolts, hunting artifacts, hunting mutants, looting a stash, trading, stories at the fire, fixing his gear, sleeping it off" width="880"></p>
 
 ## Credits and license
 

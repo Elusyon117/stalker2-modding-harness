@@ -1,9 +1,10 @@
-"""Pictures of the panels for the README, drawn as SVG in the desktop app's dark look: the zonecraft dashboard
-(/zonecraft-panel, its All mods page and one mod's page), the New mod form (/zonecraft-newmod), the Quest designer (/zonecraft-quest), the Conflicts panel
-(/zonecraft-conflicts), the Logs panel (/zonecraft-logs), the Game data browser (/zonecraft-data) and the Build & test band above the prompt. They show example
-content (a mod called ImmersiveCampfires); replace them with real screenshots whenever you like.
+"""The README's pictures, drawn as SVG in the desktop app's dark look: one card per feature, all the same size (what
+it does on the left, its panel on the right, Clawd in each panel's corner), and Clawd's scenes in one grid. The
+panels show example content (a mod called ImmersiveCampfires); the Show nodes picture is drawn by
+tools/blueprints/paste_view.py from a paste the node library writes.
 
-usage: py -I make_screens.py <folder>     writes allmods, dashboard, newmod, quest, conflicts, logs, datasearch, dataentry and band .svg there
+usage: py -I make_screens.py <folder>     writes dashboard, nodes, newmod, quest, data, build, conflicts, logs and
+                                          clawd .svg there
 """
 import os
 import sys
@@ -152,7 +153,10 @@ class Panel:
         self.y += 34
 
     def svg(self, scene_name, alt):
-        art = scene_svg(scene_name, W - PAD - 90, 44)[0] if scene_name else ""
+        art = ""
+        if scene_name:                       # top right, as theme.tsx's top() places it
+            _, aw, _ = scene_svg(scene_name, 0, 0)
+            art = scene_svg(scene_name, W - PAD - aw, 44)[0]
         h = self.y + PAD
         return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{h}" viewBox="0 0 {W} {h}" '
                 f'font-family="{FONT}" role="img"><title>{escape(alt)}</title>'
@@ -202,43 +206,6 @@ def dashboard():
     p.y += 28
     return p.svg("campfire", "The zonecraft dashboard: the tracked mod, its build and test copy, the plan's features, "
                              "Blueprint pastes with a Copy button, and Clawd at his campfire")
-
-
-def allmods():
-    """The dashboard's All mods page: every mod with its status line; picking one opens its page."""
-    p = Panel("zonecraft")
-    p.heading("Your mods (3)")
-    p.hint("Pick one to open its page.")
-    p.space(14)
-
-    def mod(lead, lead_color, name, tag, parts, state):
-        w = int(len(name) * 7.4) + 24
-        p.out.append(f'<text x="{PAD}" y="{p.y + 14}" font-size="13" fill="{lead_color}" dominant-baseline="central">'
-                     f'{lead}</text>')
-        p.button(name, PAD + 16, p.y, TEXT, 600, w=w)
-        if tag:
-            p.out.append(f'<text x="{PAD + 24 + w}" y="{p.y + 14}" font-size="12" fill="{DIM}" '
-                         f'dominant-baseline="central">{escape(tag)}</text>')
-        p.y += 34
-        spans = "".join(f'<tspan fill="{c}">{" · " if i else ""}{escape(t)}</tspan>' for i, (t, c) in enumerate(parts))
-        p.out.append(f'<text x="{PAD + 16}" y="{p.y + 8}" font-size="12" dominant-baseline="central">{spans}</text>')
-        p.y += 20
-        p.text(state, x=PAD + 16, size=12, color=FAINT, gap=30)
-    mod("●", ORANGE, "ImmersiveCampfires", "this folder",
-        [("packaging Cooking 64%", ORANGE), ("test copy ✓", GREEN), ("2/4 features", DIM)],
-        "2026-11-09: seated pose and camera confirmed in game.")
-    mod("!", RUST, "CampfireRadio", "last opened",
-        [("built 2 h ago", DIM), ("old test copy", RUST), ("4/4 features", GREEN),
-         ("1 conflict", RUST)],
-        "2026-11-07: the radio plays the Zone stations.")
-    mod("✓", GREEN, "SleepingBags", "",
-        [("built yesterday", DIM), ("test copy ✓", GREEN), ("3/5 features", DIM)],
-        "2026-11-04: bedroll placement works on slopes.")
-    p.space(2)
-    p.buttons("New mod", "Refresh")
-    p.y -= 6
-    return p.svg("exploring", "The dashboard's All mods page: every mod with a status line (packaging, build, test "
-                              "copy, features, conflicts) and its latest state; picking one opens its page")
 
 
 def newmod():
@@ -305,8 +272,9 @@ RED = "#f87171"
 def quest():
     p = Panel("Quest designer")
     p.heading("Quest designer")
-    p.hint("Lay out the quest; Claude turns it into a Quest Blueprint")
-    p.hint("plan and walks you through the Quest Tool.")
+    for line in ("Lay out the quest; Claude", "turns it into a Quest", "Blueprint plan and walks",
+                 "you through the Quest Tool."):
+        p.hint(line)
     p.space()
     p.heading("Mod")
     p.hint("The quest belongs to this mod: its files, PLAN.md and texts.")
@@ -379,15 +347,15 @@ def quest():
     p.hint("Ready to send.")
     p.buttons("Send to Claude", "Save", "New quest", first=True)
     p.y -= 6
-    return p.svg(None, "The Quest designer: a mod picked at the top, the quest's basics, start and place, characters, "
+    return p.svg("stories", "The Quest designer: a mod picked at the top, the quest's basics, start and place, characters, "
                        "ordered stages with markers, rewards, branches and rules with suggestions, and Send to Claude")
 
 
 def conflicts():
     p = Panel("Mod conflicts")
     p.heading("Mod conflicts")
-    p.hint("Per asset the last-mounted pak wins and nothing merges;")
-    p.hint("cfg patches clash only on the same field.")
+    for line in ("Per asset the last-mounted pak", "wins and nothing merges; cfg", "patches clash only on the same field."):
+        p.hint(line)
     p.labeled("Collection folder", "D:/ST2ZKMods/Collections/Hardcore")
     p.labeled("Show", "Every conflict", select=True)
     p.buttons("Scan again", first=True)
@@ -423,7 +391,7 @@ def conflicts():
              "Both patch this field; WeaponOverhaul loads later.")
     p.buttons("Ask Claude about all of them", first=True)
     p.hint("37 more files are shipped identically by several mods.")
-    return p.svg(None, "The Conflicts panel: a collection folder, the mods scanned with their mount order, and each "
+    return p.svg("hunt", "The Conflicts panel: a collection folder, the mods scanned with their mount order, and each "
                        "conflict with its winner, the mods it beats and an Ask Claude button")
 
 
@@ -460,7 +428,7 @@ def logs():
     p.space(6)
     p.buttons("Ask Claude about these", "Clear", "Refresh", first=True)
     p.y -= 6
-    return p.svg(None, "The Logs panel: what is being watched, the last packaging and its release candidate, a crash "
+    return p.svg("repair", "The Logs panel: what is being watched, the last packaging and its release candidate, a crash "
                        "with its known family and advice, and warnings from the game and kit logs")
 
 
@@ -472,44 +440,10 @@ def tline(p, parts, size=12, gap=20, x=PAD):
     p.y += gap
 
 
-def datasearch():
-    p = Panel("Game data")
-    p.heading("Game data")
-    tline(p, [("✓", GREEN, 400), ("Index built 3 days ago · 48,210 entries", DIM, 400)])
-    p.button("Rebuild", W - PAD - 74, p.y - 24, w=74)
-    p.space(6)
-    p.labeled("Mod", "ImmersiveCampfires (this folder)", select=True)
-    p.labeled("Search", "ak74")
-    x = PAD
-    for i, f in enumerate(("Everything", "Weapons", "Items", "NPCs", "Quests")):
-        x += p.button(f, x, p.y, ORANGE if i == 1 else DIM, 600 if i == 1 else 400) + 4
-    p.y += 34
-    p.button("Effects", PAD, p.y)
-    p.y += 38
-    p.heading("12+ results")
-    rows = (("AK74 Kalashnikov", "GunAK74_ST", "WeaponGeneralSetupPrototypes.cfg", True),
-            ("AK74 (Duty variant)", "GunAK74_Duty_ST", "WeaponGeneralSetupPrototypes.cfg", False),
-            ("Kalashnikov Ammo 5.45", "Ammo_545x39", "ItemPrototypes.cfg", False),
-            ("AK74 Silencer", "AK74_Silencer", "AttachPrototypes.cfg", False),
-            ("Guard (AK74 loadout)", "GuardNPC_AK74", "NPCPrototypes.cfg", False))
-    for name, sid, f, mine in rows:
-        y0 = p.y
-        p.out.append(f'<rect x="{PAD - 6}" y="{y0 - 2}" width="{W - 2 * PAD + 12}" height="46" rx="6" '
-                     f'fill="{CARD if sid == "GunAK74_ST" else BG}"/>')
-        tline(p, [(name, TEXT, 600)] + ([("patched by your mod", ORANGE, 400)] if mine else []), size=13, gap=19)
-        tline(p, [(sid, DIM, 400), ("· " + f, FAINT, 400)], size=11, gap=29)
-    p.hint("More match: type more of the name to narrow it down.")
-    p.space(4)
-    p.heading("Recent")
-    tline(p, [("★", ORANGE, 400), ("Vodka", TEXT, 400), ("·  Bloodsucker  ·  Medkit_Army", DIM, 400)])
-    p.y -= 4
-    return p.svg(None, "The Game data browser, search: index status, mod picker, search box, category filters, results")
-
-
 def dataentry():
     p = Panel("Game data")
     bw = p.button("‹ Back to results", PAD, p.y)
-    p.button("★ Favourite", PAD + bw + 6, p.y)
+    p.button("★", PAD + bw + 6, p.y, ORANGE, w=34)       # kept short: Clawd trades at the top right
     p.y += 36
     p.text("AK74 Kalashnikov", size=16, weight=600, gap=22)
     tline(p, [("GunAK74_ST", DIM, 400), ("· WeaponGeneralSetupPrototypes.cfg:1842", FAINT, 400)], size=12)
@@ -562,7 +496,7 @@ def dataentry():
     p.buttons("Add to my mod", "Send to Claude", "Copy patch", first=True)
     tline(p, [("✓", GREEN, 400), ("Checked: every field exists on GunAK74_ST", DIM, 400)])
     p.y -= 4
-    return p.svg(None, "The Game data browser, an entry: name, file, inheritance, values with one being edited, "
+    return p.svg("trading", "The Game data browser, an entry: name, file, inheritance, values with one being edited, "
                        "the pending patch and Add to my mod")
 
 
@@ -618,12 +552,282 @@ def band():
     return "".join(out)
 
 
+def sample_paste():
+    """The seat-heal paste the Show nodes picture draws: two comment boxes written by the node library, with two
+    links to nodes already in the graph (the wires the tester draws by hand)."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "tools", "blueprints"))
+    from bp_graph import Graph
+    from bp_nodes import Nodes
+    g = Graph()
+    n = Nodes(g, self_class="/ImmersiveCampfires/Runtime/BP_SeatedMode.BP_SeatedMode_C")
+    g.box("EdGraphNode_Comment_900", -80, -140, 900, 520, "Tick: heal while seated")
+    tick = n.event_tick()
+    pc = n.cast_player(exec_from=[tick["then"]], label="tick")
+    br = n.branch(n.self_get("Seated", "bool"), "only while seated")
+    n.chain(pc, br)
+    dt = n.math("Subtract_DoubleDouble", n.game_time(), n.self_get("LastHeal", "real", "double"))
+    br2 = n.branch(n.math("Greater_DoubleDouble", dt, None, b_const="2.0"), "every 2 s")
+    n.chain(br, br2)
+    n.chain(br2, n.self_set("LastHeal", "real", value=n.game_time(), sub="double", comment="remember when"))
+    g.box("EdGraphNode_Comment_901", -80, 500, 900, 400, "Input: stand up")
+    ia = n.input_action("/ImmersiveCampfires/Input/IA_StandUp.IA_StandUp", x=20, y=600, comment="stand up")
+    n.chain(ia, n.self_set("Seated", "bool", default="false", x=300, y=600, comment="not seated"))
+    g.layout_tree()
+    text = "\n".join(g.text())
+    text = link_out(text, lambda c: "IfThenElse" in c, "else", "K2Node_CallFunction_77", "0" * 31 + "1")
+    return link_out(text, lambda c: "VariableSet" in c and 'MemberName="Seated"' in c, "then", "K2Node_CallFunction_78",
+                    "0" * 31 + "2")
+
+
+def link_out(text, pick, pin, target, pid):
+    """Points one pin of the first node block `pick` accepts at a node that is not in the paste."""
+    out, block, done = [], "", False
+    lines = text.splitlines()
+    for k, line in enumerate(lines):
+        if line.startswith("Begin Object"):
+            end = next(j for j in range(k, len(lines)) if lines[j].startswith("End Object"))
+            block = "\n".join(lines[k:end + 1])
+        if not done and pick(block) and f'PinName="{pin}"' in line and "LinkedTo" not in line:
+            line = line.replace("PersistentGuid=", f"LinkedTo=({target} {pid},),PersistentGuid=", 1)
+            done = True
+        out.append(line)
+    return "\n".join(out)
+
+
+def nodes_pane():
+    """The Nodes pane (Show nodes, then Own pane): a comment box of a paste as the graph editor will show it."""
+    text = sample_paste()                    # puts tools/blueprints on the path
+    import paste_view
+    vs = paste_view.views(text, {"K2Node_CallFunction_77": "Stop Healing", "K2Node_CallFunction_78": "Play Stand Up"})
+    hand = []
+    for v in vs:
+        hand += [h for h in v["hand"] if h not in hand]
+    v = vs[0]
+    nodes, _ = paste_view.parse(text)
+    seated = next(n for n in nodes if n["props"].get("NodeComment") == "only while seated")
+    ww, wh = 620, 300                        # a window around the first Branch and its hand-wired stub
+    wx = max(0, min(v["w"] - ww, int(seated["props"]["NodePosX"]) - v["minx"] - 60))
+    wy = max(0, min(v["h"] - wh, int(seated["props"]["NodePosY"]) - v["miny"] - 70))
+    p = Panel("seat_heal nodes")
+    p.heading("Seat_heal · nodes")
+    p.hint("As the Zone Kit graph")
+    p.hint("will show it.")
+    p.space(10)
+    x = PAD
+    for i, q in enumerate(vs):
+        x += p.button(f"{q['title']}  {q['nodes']}", x, p.y, ORANGE if i == 0 else DIM, 600 if i == 0 else 400) + 6
+    p.y += 38
+    tline(p, [("!", ORANGE, 400), (f"wire by hand after pasting ({len(hand)}):", DIM, 400)], gap=19)
+    for h in hand:
+        tline(p, [(h, TEXT, 400)], x=PAD + 16, gap=19)
+    p.space(8)
+    pw = W - 2 * PAD
+    ph = round(pw * wh / ww)
+    pic = v["svg"].replace("<svg ", f'<svg x="{PAD}" y="{p.y}" ', 1)
+    pic = pic.replace(f'width="{v["w"]}" height="{v["h"]}"', f'width="{pw}" height="{ph}"', 1)
+    pic = pic.replace(f'viewBox="{v["minx"]} {v["miny"]} {v["w"]} {v["h"]}"',
+                      f'viewBox="{v["minx"] + wx} {v["miny"] + wy} {ww} {wh}"', 1)
+    p.out.append(pic + f'<rect x="{PAD - 0.5}" y="{p.y - 0.5}" width="{pw + 1}" height="{ph + 1}" rx="6" '
+                       f'fill="none" stroke="{FIELD_BORDER}"/>')
+    p.y += ph + 10
+    p.buttons("+ Closer", "− Whole box", "◀", "▶")
+    p.hint("Dashed orange: wire by hand. Dashed grey: goes on")
+    p.hint("in another box.")
+    p.y -= 4
+    return p.svg("repair", "The Nodes pane: a Blueprint paste's comment box drawn as the Zone Kit graph editor will "
+                           "show it, the wires to draw by hand after pasting, zoom and move buttons, and Clawd fixing "
+                           "his gear")
+
+
+# ---------------------------------------------------------------------------------------------------- README cards
+CW, CH = 880, 500              # every feature card is this size, so the README reads as one even column
+CARD_BG = "#141312"
+
+
+def _size(svg):
+    import re
+    m = re.match(r'<svg[^>]*?width="([\d.]+)" height="([\d.]+)"', svg)
+    return float(m.group(1)), float(m.group(2))
+
+
+def _wrap(s, chars):
+    lines, cur = [], ""
+    for w in s.split():
+        if cur and len(cur) + len(w) + 1 > chars:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = f"{cur} {w}".strip()
+    return lines + ([cur] if cur else [])
+
+
+def _frame(body, alt):
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{CW}" height="{CH}" viewBox="0 0 {CW} {CH}" '
+            f'font-family="{FONT}" role="img"><title>{escape(alt)}</title><defs>'
+            f'<linearGradient id="zc-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1d1c1a"/>'
+            f'<stop offset="1" stop-color="{CARD_BG}"/></linearGradient>'
+            f'<radialGradient id="zc-glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="{ORANGE}" '
+            f'stop-opacity="0.16"/><stop offset="1" stop-color="{ORANGE}" stop-opacity="0"/></radialGradient>'
+            f'<linearGradient id="zc-fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{CARD_BG}" '
+            f'stop-opacity="0"/><stop offset="1" stop-color="{CARD_BG}"/></linearGradient>'
+            f'<filter id="zc-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="8" '
+            f'stdDeviation="10" flood-color="#000" flood-opacity="0.55"/></filter>'
+            f'<clipPath id="zc-clip"><rect width="{CW}" height="{CH}" rx="16"/></clipPath></defs>'
+            f'<g clip-path="url(#zc-clip)"><rect width="{CW}" height="{CH}" fill="url(#zc-bg)"/>{body}</g>'
+            f'<rect x="0.5" y="0.5" width="{CW - 1}" height="{CH - 1}" rx="16" fill="none" stroke="{BORDER}"/></svg>')
+
+
+def _chip(x, y, s):
+    w = len(s) * 7.2 + 22
+    return (f'<rect x="{x}" y="{y}" width="{w:.0f}" height="26" rx="13" fill="{ORANGE}" fill-opacity="0.12" '
+            f'stroke="{ORANGE}" stroke-opacity="0.5"/><text x="{x + w / 2:.0f}" y="{y + 13}" font-size="12.5" '
+            f'fill="{ORANGE}" font-family="Consolas, Menlo, monospace" text-anchor="middle" '
+            f'dominant-baseline="central">{escape(s)}</text>')
+
+
+def card(title, command, tagline, bullets, panel, alt):
+    """A feature card: what it is on the left, the panel on the right, cut off with a fade when it is taller than
+    the card."""
+    out = [_chip(48, 48, command),
+           f'<text x="48" y="118" font-size="30" font-weight="700" fill="{TEXT}">{escape(title)}</text>']
+    y = 152
+    for line in _wrap(tagline, 44):
+        out.append(f'<text x="48" y="{y}" font-size="15" fill="{DIM}">{escape(line)}</text>')
+        y += 22
+    y += 20
+    for b in bullets:
+        for k, line in enumerate(_wrap(b, 44)):
+            if k == 0:
+                out.append(f'<text x="48" y="{y}" font-size="14" fill="{ORANGE}" font-weight="700">›</text>')
+            out.append(f'<text x="66" y="{y}" font-size="13.5" fill="{TEXT}">{escape(line)}</text>')
+            y += 20
+        y += 10
+    left, top, area_w = 436, 34, CW - 436 - 30
+    out.append(f'<ellipse cx="{left + area_w / 2}" cy="{CH / 2}" rx="{area_w * 0.75}" ry="{CH * 0.6}" '
+               f'fill="url(#zc-glow)"/>')
+    pw, ph = _size(panel)
+    s = min(1.0, area_w / pw)
+    out.append(f'<g transform="translate({left + (area_w - pw * s) / 2:.1f} {top}) scale({s:.3f})" '
+               f'filter="url(#zc-shadow)">{panel}</g>')
+    if top + ph * s > CH - 20:
+        out.append(f'<rect x="{left - 30}" y="{CH - 90}" width="{area_w + 60}" height="90" fill="url(#zc-fade)"/>')
+    return _frame("".join(out), alt)
+
+
+def wide_card(title, command, tagline, panel, alt):
+    """A card for a wide picture (the band above the prompt): the words on top, the picture under them."""
+    out = [_chip(48, 40, command),
+           f'<text x="48" y="106" font-size="30" font-weight="700" fill="{TEXT}">{escape(title)}</text>']
+    for k, line in enumerate(_wrap(tagline, 96)):
+        out.append(f'<text x="48" y="{138 + 22 * k}" font-size="15" fill="{DIM}">{escape(line)}</text>')
+    pw, ph = _size(panel)
+    s = min(1.0, (CH - 210) / ph, (CW - 96) / pw)
+    out.append(f'<ellipse cx="{CW / 2}" cy="{CH - 120}" rx="{CW * 0.5}" ry="{CH * 0.45}" fill="url(#zc-glow)"/>')
+    out.append(f'<g transform="translate({(CW - pw * s) / 2:.1f} {CH - 30 - ph * s:.1f}) scale({s:.3f})" '
+               f'filter="url(#zc-shadow)">{panel}</g>')
+    return _frame("".join(out), alt)
+
+
+SCENE_LABELS = (("campfire", "By the campfire"), ("guitar", "Playing the guitar"), ("planning", "Plotting a route"),
+                ("exploring", "Exploring the Zone"), ("bolt", "Throwing bolts"), ("detector", "Hunting artifacts"),
+                ("hunt", "Hunting mutants"), ("stash", "Looting a stash"), ("trading", "Trading"),
+                ("stories", "Stories at the fire"), ("repair", "Fixing his gear"), ("sleeping", "Sleeping it off"))
+
+
+def clawd_grid():
+    """Every scene of Clawd in one even grid: four across, each at the same pixel scale, standing on one line."""
+    cols, cell_w, cell_h, top = 4, CW / 4, 130, 26
+    rows = (len(SCENE_LABELS) + cols - 1) // cols
+    h = top + rows * cell_h
+    out = []
+    for i, (name, label) in enumerate(SCENE_LABELS):
+        cx, cy = (i % cols) * cell_w, top + (i // cols) * cell_h
+        _, aw, ah = scene_svg(name, 0, 0)
+        out.append(scene_svg(name, round(cx + (cell_w - aw) / 2), round(cy + 66 - ah))[0])
+        out.append(f'<text x="{cx + cell_w / 2:.0f}" y="{cy + 94}" font-size="13" fill="{DIM}" '
+                   f'text-anchor="middle">{escape(label)}</text>')
+    alt = "Clawd, zonecraft's crab in a gas mask, in twelve scenes: " + ", ".join(l.lower() for _, l in SCENE_LABELS)
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{CW}" height="{h}" viewBox="0 0 {CW} {h}" '
+            f'font-family="{FONT}" role="img"><title>{escape(alt)}</title>'
+            f'<rect width="{CW}" height="{h}" rx="16" fill="{CARD_BG}"/>'
+            f'<rect x="0.5" y="0.5" width="{CW - 1}" height="{h - 1}" rx="16" fill="none" stroke="{BORDER}"/>'
+            + "".join(out) + "</svg>")
+
+
+def cards():
+    """The README's pictures: one card per feature, all the same size, plus Clawd's scenes."""
+    return {
+        "dashboard": card(
+            "Dashboard", "/zonecraft-panel", "Every mod you work on, and where each one stands.",
+            ["All mods: packaging, build, test copy, features and conflicts for each mod",
+             "Each mod's page: the last cook, the test copy in your game, checkpoints",
+             "The plan, ticked off as each feature works in game"],
+            dashboard(),
+            "The zonecraft dashboard: a mod's page with its build, test copy, plan and Blueprint pastes, and Clawd "
+            "at his campfire"),
+        "nodes": card(
+            "Show nodes", "/zonecraft-panel", "See a Blueprint paste before you paste it.",
+            ["Each comment box drawn the way the Zone Kit graph editor will show it",
+             "The wires to draw by hand after pasting, listed and drawn as dashed stubs",
+             "Copy with one button, then check that every node arrived"],
+            nodes_pane(),
+            "Show nodes: a Blueprint paste's comment box drawn as the Zone Kit graph editor will show it, with "
+            "the wires to draw by hand"),
+        "newmod": card(
+            "New mod", "/zonecraft-newmod", "Write down the mod you want; Claude takes it from there.",
+            ["Name, main idea, the features you want and the details to check",
+             "How its packaged files are named for the load order",
+             "Send to Claude: a plan and a GitHub page for the mod"],
+            newmod(),
+            "The New mod form: release candidate naming, the mod's name, main idea, features and details to check, "
+            "and Send to Claude"),
+        "quest": card(
+            "Quest designer", "/zonecraft-quest", "Lay out a quest before you open the Quest Tool.",
+            ["Characters, stages with markers, dialogs, items and rewards",
+             "Branches, failure rules and world changes, with suggestions",
+             "Saved in the mod; Claude turns it into a Quest Blueprint plan"],
+            quest(),
+            "The Quest designer: the quest's basics, start and place, characters, ordered stages with markers, "
+            "rewards, branches and rules, and Send to Claude"),
+        "data": card(
+            "Game data", "/zonecraft-data", "Look up any weapon, item, NPC, quest or effect, and change it.",
+            ["Search the game's own data, with your mod's changes marked",
+             "Every value shown as its own, inherited or changed by your mod",
+             "Change a value and add the patch to your mod in one press"],
+            dataentry(),
+            "The Game data browser: the AK74 entry with its values, one being changed, and the patch to add to "
+            "the mod"),
+        "build": wide_card(
+            "Build & test", "above the prompt", "While you press Package Mod in the Zone Kit, the band above the "
+            "prompt follows it: stage, time and errors, then Install test copy and what to try in game.",
+            band(),
+            "The Build and test band above the prompt: a packaging in progress with its stage and time, then the "
+            "finished build with Install test copy and the features to try"),
+        "conflicts": card(
+            "Conflicts", "/zonecraft-conflicts", "Which mods fight over the same files, and which one wins.",
+            ["Your mods, the installed mods and a collection folder",
+             "Shared assets with the winner, whole cfg files, patches on one field",
+             "Ask Claude about any conflict"],
+            conflicts(),
+            "The Conflicts panel: the mods scanned with their mount order, and each conflict with its winner and "
+            "an Ask Claude button"),
+        "logs": card(
+            "Logs", "/zonecraft-logs", "What the game and the Zone Kit said, without opening a log.",
+            ["Packaging as it happens, and its release candidate",
+             "Crashes with what they mean and what to try",
+             "Cfg patch warnings, broken game data and mod mounts"],
+            logs(),
+            "The Logs panel: the last packaging, a crash with its known family and advice, and warnings from the "
+            "game and kit logs"),
+        "clawd": clawd_grid(),
+    }
+
+
 if __name__ == "__main__":
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    drawings = (("allmods", allmods), ("dashboard", dashboard), ("newmod", newmod), ("quest", quest), ("conflicts", conflicts),
-                ("logs", logs), ("datasearch", datasearch), ("dataentry", dataentry), ("band", band))
-    for name, draw in drawings:
+    drawn = cards()
+    for name, svg in drawn.items():
         with open(os.path.join(out, f"{name}.svg"), "w", encoding="utf-8", newline="\n") as fh:
-            fh.write(draw())
-    print(", ".join(f"{n}.svg" for n, _ in drawings))
+            fh.write(svg)
+    print(", ".join(f"{n}.svg" for n in drawn))

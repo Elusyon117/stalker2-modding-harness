@@ -7,7 +7,7 @@ import type { EngineInterface as Engine, On } from 'claude-code'
 
 import type { Conflict, ConflictReport } from '../types'
 import { age, knownMods, readSettings, runJson } from './data'
-import { action, ORANGE, RUST, section } from './theme'
+import { action, ORANGE, RUST, scene, section, top } from './theme'
 
 export const CONFLICTS_PANE = 'zonecraft-conflicts'
 const TOOL = 'mcp__zonecraft__check_conflicts'
@@ -138,8 +138,14 @@ export function registerConflicts(on: On) {
       )
     }
 
-    const intro = section(els, 'intro', 'Mod conflicts',
-      'Per asset the last-mounted pak wins and nothing merges; cfg patches clash only on the same field.', controls())
+    const clashing = (rep?.conflicts ?? []).some(c => c.verdict !== 'same')
+    const art = s.isScanning
+      ? scene($, e, 'detector', 'Clawd sweeping his detector across the Zone: the scan is running')
+      : clashing
+        ? scene($, e, 'hunt', 'Clawd aiming his rifle at a blind dog: there are conflicts to deal with')
+        : scene($, e, 'bolt', 'Clawd throwing a bolt to check the way is clear')
+    const intro = top(els, e.surface === 'terminal', art, section(els, 'intro', 'Mod conflicts',
+      'Per asset the last-mounted pak wins and nothing merges; cfg patches clash only on the same field.', controls()))
     if (!rep) {
       return <Box flexDirection="column" gap={1}>{intro}<Text dimColor>No scan yet.</Text></Box>
     }

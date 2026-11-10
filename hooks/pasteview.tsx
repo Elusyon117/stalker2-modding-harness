@@ -6,7 +6,7 @@ import type { ElementTable, EngineInterface as Engine, Register, RenderNode } fr
 
 import type { NodesState, PasteViewFile, PasteViewPart } from '../types'
 import { readSettings, runJson } from './data'
-import { ORANGE } from './theme'
+import { ORANGE, scene, top } from './theme'
 
 export const NODES_PANE = 'zonecraft-nodes'
 export const NODES_NONE: NodesState = { path: '', box: 0, zoom: 0, x: 0, y: 0 }
@@ -169,7 +169,9 @@ export const registerNodes: Register = on => {
     if (!s.path) return <Text dimColor>Press Show nodes on a Blueprint paste in the zonecraft panel.</Text>
     return (
       <Box flexDirection="column" gap={1}>
-        <Text bold color={ORANGE}>{`${pasteName(s.path).toUpperCase()} · NODES`}</Text>
+        {top({ Box, Text, Button }, e.surface === 'terminal',
+          scene($, e, 'repair', 'Clawd wiring up his gear with a wrench, sparks flying'),
+          <Text bold color={ORANGE}>{`${pasteName(s.path).toUpperCase()} · NODES`}</Text>)}
         {await nodesBody($, e, { Box, Text, Button }, s, true)}
       </Box>
     )

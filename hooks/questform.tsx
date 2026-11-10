@@ -11,7 +11,7 @@ import {
   SUGGEST, asQuest, characterLine, clean, emptyQuest, questBrief, questGaps, questSid, stageLine,
 } from './quest'
 import type { ListField } from './quest'
-import { action, ORANGE, section } from './theme'
+import { action, ORANGE, scene, section, top } from './theme'
 
 export const QUEST_PANE = 'zonecraft-quest'
 const TOOL = 'mcp__zonecraft__quest_designer'
@@ -303,10 +303,12 @@ export function registerQuest(on: On) {
 
     return (
       <Box flexDirection="column" gap={1}>
-        <Box flexDirection="column" key="intro">
-          <Text bold color={ORANGE}>QUEST DESIGNER</Text>
-          <Text dimColor wrap="wrap">Lay out the quest; Claude turns it into a Quest Blueprint plan and walks you through the Quest Tool.</Text>
-        </Box>
+        {top(els, e.surface === 'terminal',
+          scene($, e, 'stories', 'Clawd and two stalkers around a campfire, telling stories'),
+          <Box flexDirection="column" key="intro">
+            <Text bold color={ORANGE}>QUEST DESIGNER</Text>
+            <Text dimColor wrap="wrap">Lay out the quest; Claude turns it into a Quest Blueprint plan and walks you through the Quest Tool.</Text>
+          </Box>)}
         {modSection}
         {basics}
         {start}

@@ -15,7 +15,8 @@ This repository is the zonecraft Claude Code plugin (the repo root is the plugin
 - Before pushing: `py -I tests/test_bp_nodes.py`, `py -I tests/test_gamedata.py`, `py -I tests/test_conflicts.py`, `py -I tests/test_paste_view.py`, `claude plugin test .` (the panels' tests in `tests/*.test.tsx`), `claude plugin validate .`, and bump `version` in
   `.claude-plugin/plugin.json` for a release (installed copies update only on a new version).
 - The logo and the icon come from `assets/make_logo.py` (`<out>.gif` for the logo, `<out>.png` for the icon).
-  Clawd's scenes come from `assets/clawd_scenes.py`: `hooks/clawd.ts` for the panels, `assets/clawd` for the README
-  GIFs, `<out>.png sheet` to check every scene on light and dark. Regenerate all three after changing a drawing.
-  The README's panel pictures come from `assets/make_screens.py assets/screens` (example content; redraw them when a
-  panel's layout changes, or replace them with real screenshots).
+  Clawd's scenes come from `assets/clawd_scenes.py`: `hooks/clawd.ts` for the panels, `<out>.png sheet` to check
+  every scene on light and dark. Regenerate both, then the README pictures, after changing a drawing.
+  Every README picture comes from `assets/make_screens.py assets/screens`: one 880×500 card per feature (its words
+  on the left, its panel with Clawd on the right) and Clawd's scenes in one grid. Redraw them when a panel's layout
+  changes; a new feature gets a card in `cards()` and a line in the README's feature list.

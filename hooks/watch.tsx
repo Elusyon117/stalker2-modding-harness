@@ -7,7 +7,7 @@ import type { EngineInterface as Engine, On } from 'claude-code'
 
 import type { CrashInfo, LogEvent, PackageInfo, RcInfo, WatchState } from '../types'
 import { activeModRoot, age, clock, dashboard, readSettings, runJson } from './data'
-import { action, ORANGE, RUST, section } from './theme'
+import { action, ORANGE, RUST, scene, section, top } from './theme'
 
 export const LOGS_PANE = 'zonecraft-logs'
 const TOOL = 'mcp__zonecraft__open_logs'
@@ -271,7 +271,10 @@ export function registerWatch(on: On) {
         <Button key="refresh" dimColor onPress={() => void pollOnce($).catch(() => undefined)}>Refresh</Button>
       </Box>)
 
-    return <Box flexDirection="column" gap={1}>{status}{pkg}{crashes}{log}</Box>
+    const art = w.crashes.length
+      ? scene($, e, 'repair', 'Clawd fixing his rifle with a wrench, sparks flying: the game crashed')
+      : scene($, e, 'detector', 'Clawd sweeping his detector: watching the logs')
+    return <Box flexDirection="column" gap={1}>{top(els, e.surface === 'terminal', art, status)}{pkg}{crashes}{log}</Box>
   })
 }
 
