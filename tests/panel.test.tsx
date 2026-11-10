@@ -130,28 +130,39 @@ test('the panel shows the mod, its cook and test copy, and a paste to copy', asy
   await ui.unmount()
 })
 
-test('the picker switches the panel to another mod and remembers the pick', async ($, on) => {
+test('All mods lists every mod with its status; picking one opens it and is remembered', async ($, on) => {
   const store: Record<string, unknown> = {}
   fakePc(on, { cwd: MOD, store })
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface })
-    const select = await ui.find({ type: 'Select', key: 'mod' })
-    expect(JSON.stringify(select?.props)).toContain('OtherMod')
-    expect(JSON.stringify(select?.props)).not.toContain('notes')
-    await ui.select({ key: 'mod', value: OTHER })
-    expect((await ui.find({ type: 'Text', text: /^OtherMod/ }))?.text).toContain('OtherMod')
+    // in a mod folder the dashboard opens on that mod, with a way back to the list
+    expect((await ui.find({ type: 'Text', text: /^MyMod/ }))?.text).toContain('MyMod')
+    await ui.press({ key: 'all-mods' })
+    expect((await ui.find({ type: 'Text', text: /^YOUR MODS/ }))?.text).toBe('YOUR MODS (2)')
+    expect(await ui.find({ key: 'open:0' })).toBeDefined()
+    expect(await ui.find({ key: 'open:1' })).toBeDefined()
+    expect(await ui.find({ type: 'Text', text: /notes/ })).toBeUndefined()
+    expect((await ui.find({ type: 'Text', text: /^built 12 min ago/ }))?.text).toBe('built 12 min ago')
+    expect((await ui.find({ type: 'Text', text: /test copy ✓/ }))?.text).toBe(' · test copy ✓')
+    expect((await ui.find({ type: 'Text', text: /features/ }))?.text).toBe(' · 2/3 features')
     expect((await ui.find({ type: 'Text', text: /radio plays/ }))?.text).toContain('2026-11-05')
+
+    await ui.press({ key: 'open:1' })
+    expect((await ui.find({ type: 'Text', text: /^OtherMod/ }))?.text).toContain('OtherMod')
     expect((await ui.find({ type: 'Text', text: /No feature list yet/ }))?.text).toContain('PLAN.md')
     expect(store['mod-picked']).toBe(OTHER)
-    await ui.select({ key: 'mod', value: MOD })
+    await ui.press({ key: 'all-mods' })
+    await ui.press({ key: 'open:0' })
     await ui.unmount()
   }
 })
 
-test('outside a mod the panel shows the mod picked last time', async ($, on) => {
+test('outside a mod the dashboard opens on the list of mods', async ($, on) => {
   fakePc(on, { cwd: 'C:/somewhere/else', store: { 'mod-picked': OTHER } })
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
-  expect((await ui.find({ type: 'Text', text: /^OtherMod/ }))?.text).toContain('OtherMod')
+  expect((await ui.find({ type: 'Text', text: /^YOUR MODS/ }))?.text).toBe('YOUR MODS (2)')
+  expect((await ui.find({ type: 'Text', text: /last opened/ }))?.text).toBe('last opened')
+  expect((await ui.find({ type: 'Text', text: /^not built yet|^build unknown|^built/ }))).toBeDefined()
   await ui.unmount()
 })
 

@@ -14,7 +14,7 @@ const TOOL = 'mcp__zonecraft__check_conflicts'
 const STORE = 'conflicts-report'
 const SHOW_MAX = 40
 
-const state = atom({ plugin: 'zonecraft', key: 'conflicts' } as const,
+const conflictState = atom({ plugin: 'zonecraft', key: 'conflicts' } as const,
   { report: undefined as ConflictReport | undefined, isScanning: false, collection: '', onlyYours: false },
   { shape: 'conflicts-1' })
 
@@ -33,9 +33,9 @@ export function conflictLine(c: Conflict): string {
 }
 
 async function scan($: Engine) {
-  const cur = await read($, state)
+  const cur = await read($, conflictState)
   if (cur.isScanning) return
-  await update($, state, s => ({ ...s, isScanning: true }))
+  await update($, conflictState, s => ({ ...s, isScanning: true }))
   try {
     const settings = await readSettings($)
     const mods = await knownMods($, await $.session.cwd(), settings, strings(await $.store.get('mods-seen')))
@@ -47,16 +47,16 @@ async function scan($: Engine) {
     const r = await runJson<ConflictReport>($, settings, 'tools/pak/conflicts.py', args, 600_000)
     if (r.value) {
       const report = r.value
-      await update($, state, s => ({ ...s, report, isScanning: false }))
+      await update($, conflictState, s => ({ ...s, report, isScanning: false }))
       await $.store.set(STORE, report)
       const mine = report.conflicts.filter(c => c.isYours && c.verdict !== 'same').length
       await $.ui.toast(`Conflict check: ${report.mods.length} mods, ${report.conflicts.filter(c => c.verdict !== 'same').length} conflicts (${mine} with your mods).`)
     } else {
-      await update($, state, s => ({ ...s, isScanning: false }))
+      await update($, conflictState, s => ({ ...s, isScanning: false }))
       await $.ui.toast(`The conflict check failed: ${r.error}`)
     }
   } catch (err) {
-    await update($, state, s => ({ ...s, isScanning: false }))
+    await update($, conflictState, s => ({ ...s, isScanning: false }))
     await $.ui.toast(`The conflict check failed: ${err instanceof Error ? err.message : String(err)}`)
   }
 }
@@ -66,10 +66,10 @@ async function open($: Engine) {
 }
 
 export async function conflictsSessionStart($: Engine) {
-  const cur = await read($, state)
+  const cur = await read($, conflictState)
   if (!cur.report) {
     const kept = await $.store.get(STORE).catch(() => undefined)
-    if (kept && typeof kept === 'object') await update($, state, s => ({ ...s, report: kept as ConflictReport }))
+    if (kept && typeof kept === 'object') await update($, conflictState, s => ({ ...s, report: kept as ConflictReport }))
   }
   await $.command.register({
     name: 'zonecraft-conflicts',
@@ -100,7 +100,7 @@ export function registerConflicts(on: On) {
     const input = (e.input ?? {}) as { collection?: unknown }
     if (typeof input.collection === 'string') {
       const collection = input.collection
-      await update($, state, s => ({ ...s, collection }))
+      await update($, conflictState, s => ({ ...s, collection }))
     }
     await open($)
     void scan($)
@@ -113,10 +113,10 @@ export function registerConflicts(on: On) {
   on('ui.render', { component: 'Pane', requestId: CONFLICTS_PANE }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const els = { Box, Text, Button }
-    const s = await read($, state)
+    const s = await read($, conflictState)
     const now = await $.clock.now()
     const rep = s.report
-    const set = (patch: Partial<typeof s>) => update($, state, cur => ({ ...cur, ...patch }))
+    const set = (patch: Partial<typeof s>) => update($, conflictState, cur => ({ ...cur, ...patch }))
     const hasFields = e.surface === 'terminal' || e.surface === 'desktop' || e.surface === 'vscode'
 
     const controls = () => {

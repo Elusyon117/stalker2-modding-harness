@@ -1,9 +1,9 @@
 """Pictures of the panels for the README, drawn as SVG in the desktop app's dark look: the zonecraft dashboard
-(/zonecraft-panel), the New mod form (/zonecraft-newmod), the Quest designer (/zonecraft-quest), the Conflicts panel
-(/zonecraft-conflicts), the Logs panel (/zonecraft-logs) and the Build & test band above the prompt. They show example
+(/zonecraft-panel, its All mods page and one mod's page), the New mod form (/zonecraft-newmod), the Quest designer (/zonecraft-quest), the Conflicts panel
+(/zonecraft-conflicts), the Logs panel (/zonecraft-logs), the Game data browser (/zonecraft-data) and the Build & test band above the prompt. They show example
 content (a mod called ImmersiveCampfires); replace them with real screenshots whenever you like.
 
-usage: py -I make_screens.py <folder>     writes dashboard, newmod, quest, conflicts, logs and band .svg there
+usage: py -I make_screens.py <folder>     writes allmods, dashboard, newmod, quest, conflicts, logs, datasearch, dataentry and band .svg there
 """
 import os
 import sys
@@ -166,15 +166,8 @@ class Panel:
 def dashboard():
     p = Panel("zonecraft")
     p.heading("Mod")
-    p.out.append(f'<text x="{PAD}" y="{p.y + 19}" font-size="12" fill="{DIM}" dominant-baseline="central">Tracking</text>')
-    keep = PAD
-    globals()["PAD"] = PAD + 58                          # the picker sits after its label
-    p.out.append(f'<rect x="{PAD}" y="{p.y + 4}" width="{W - PAD - 118}" height="30" rx="6" fill="{FIELD}" '
-                 f'stroke="{FIELD_BORDER}"/><text x="{PAD + 10}" y="{p.y + 19}" font-size="12" fill="{TEXT}" '
-                 f'dominant-baseline="central">ImmersiveCampfires (this folder)</text>'
-                 f'<path d="M{W - 128} {p.y + 17} l4 4 l4 -4" fill="none" stroke="{DIM}" stroke-width="1.5"/>')
-    globals()["PAD"] = keep
-    p.y += 44
+    p.button("‹ All mods (3)", PAD, p.y + 4)
+    p.y += 42
     p.text("ImmersiveCampfires", size=15, weight=600, gap=21)
     p.out[-1] = p.out[-1].replace("</text>", f'<tspan fill="{DIM}" font-weight="400" font-size="13"> · IC</tspan></text>')
     p.text("Sit down at any campfire: the camera lowers, time", gap=18)
@@ -209,6 +202,43 @@ def dashboard():
     p.y += 28
     return p.svg("campfire", "The zonecraft dashboard: the tracked mod, its build and test copy, the plan's features, "
                              "Blueprint pastes with a Copy button, and Clawd at his campfire")
+
+
+def allmods():
+    """The dashboard's All mods page: every mod with its status line; picking one opens its page."""
+    p = Panel("zonecraft")
+    p.heading("Your mods (3)")
+    p.hint("Pick one to open its page.")
+    p.space(14)
+
+    def mod(lead, lead_color, name, tag, parts, state):
+        w = int(len(name) * 7.4) + 24
+        p.out.append(f'<text x="{PAD}" y="{p.y + 14}" font-size="13" fill="{lead_color}" dominant-baseline="central">'
+                     f'{lead}</text>')
+        p.button(name, PAD + 16, p.y, TEXT, 600, w=w)
+        if tag:
+            p.out.append(f'<text x="{PAD + 24 + w}" y="{p.y + 14}" font-size="12" fill="{DIM}" '
+                         f'dominant-baseline="central">{escape(tag)}</text>')
+        p.y += 34
+        spans = "".join(f'<tspan fill="{c}">{" · " if i else ""}{escape(t)}</tspan>' for i, (t, c) in enumerate(parts))
+        p.out.append(f'<text x="{PAD + 16}" y="{p.y + 8}" font-size="12" dominant-baseline="central">{spans}</text>')
+        p.y += 20
+        p.text(state, x=PAD + 16, size=12, color=FAINT, gap=30)
+    mod("●", ORANGE, "ImmersiveCampfires", "this folder",
+        [("packaging Cooking 64%", ORANGE), ("test copy ✓", GREEN), ("2/4 features", DIM)],
+        "2026-11-09: seated pose and camera confirmed in game.")
+    mod("!", RUST, "CampfireRadio", "last opened",
+        [("built 2 h ago", DIM), ("old test copy", RUST), ("4/4 features", GREEN),
+         ("1 conflict", RUST)],
+        "2026-11-07: the radio plays the Zone stations.")
+    mod("✓", GREEN, "SleepingBags", "",
+        [("built yesterday", DIM), ("test copy ✓", GREEN), ("3/5 features", DIM)],
+        "2026-11-04: bedroll placement works on slopes.")
+    p.space(2)
+    p.buttons("New mod", "Refresh")
+    p.y -= 6
+    return p.svg("exploring", "The dashboard's All mods page: every mod with a status line (packaging, build, test "
+                              "copy, features, conflicts) and its latest state; picking one opens its page")
 
 
 def newmod():
@@ -434,6 +464,108 @@ def logs():
                        "with its known family and advice, and warnings from the game and kit logs")
 
 
+def tline(p, parts, size=12, gap=20, x=PAD):
+    """One line of coloured parts: [(text, color, weight)]."""
+    spans = "".join(f'<tspan fill="{c}" font-weight="{w}"{" dx=\"6\"" if i else ""}>{escape(t)}</tspan>'
+                    for i, (t, c, w) in enumerate(parts))
+    p.out.append(f'<text x="{x}" y="{p.y + 14}" font-size="{size}" dominant-baseline="central">{spans}</text>')
+    p.y += gap
+
+
+def datasearch():
+    p = Panel("Game data")
+    p.heading("Game data")
+    tline(p, [("✓", GREEN, 400), ("Index built 3 days ago · 48,210 entries", DIM, 400)])
+    p.button("Rebuild", W - PAD - 74, p.y - 24, w=74)
+    p.space(6)
+    p.labeled("Mod", "ImmersiveCampfires (this folder)", select=True)
+    p.labeled("Search", "ak74")
+    x = PAD
+    for i, f in enumerate(("Everything", "Weapons", "Items", "NPCs", "Quests")):
+        x += p.button(f, x, p.y, ORANGE if i == 1 else DIM, 600 if i == 1 else 400) + 4
+    p.y += 34
+    p.button("Effects", PAD, p.y)
+    p.y += 38
+    p.heading("12+ results")
+    rows = (("AK74 Kalashnikov", "GunAK74_ST", "WeaponGeneralSetupPrototypes.cfg", True),
+            ("AK74 (Duty variant)", "GunAK74_Duty_ST", "WeaponGeneralSetupPrototypes.cfg", False),
+            ("Kalashnikov Ammo 5.45", "Ammo_545x39", "ItemPrototypes.cfg", False),
+            ("AK74 Silencer", "AK74_Silencer", "AttachPrototypes.cfg", False),
+            ("Guard (AK74 loadout)", "GuardNPC_AK74", "NPCPrototypes.cfg", False))
+    for name, sid, f, mine in rows:
+        y0 = p.y
+        p.out.append(f'<rect x="{PAD - 6}" y="{y0 - 2}" width="{W - 2 * PAD + 12}" height="46" rx="6" '
+                     f'fill="{CARD if sid == "GunAK74_ST" else BG}"/>')
+        tline(p, [(name, TEXT, 600)] + ([("patched by your mod", ORANGE, 400)] if mine else []), size=13, gap=19)
+        tline(p, [(sid, DIM, 400), ("· " + f, FAINT, 400)], size=11, gap=29)
+    p.hint("More match: type more of the name to narrow it down.")
+    p.space(4)
+    p.heading("Recent")
+    tline(p, [("★", ORANGE, 400), ("Vodka", TEXT, 400), ("·  Bloodsucker  ·  Medkit_Army", DIM, 400)])
+    p.y -= 4
+    return p.svg(None, "The Game data browser, search: index status, mod picker, search box, category filters, results")
+
+
+def dataentry():
+    p = Panel("Game data")
+    bw = p.button("‹ Back to results", PAD, p.y)
+    p.button("★ Favourite", PAD + bw + 6, p.y)
+    p.y += 36
+    p.text("AK74 Kalashnikov", size=16, weight=600, gap=22)
+    tline(p, [("GunAK74_ST", DIM, 400), ("· WeaponGeneralSetupPrototypes.cfg:1842", FAINT, 400)], size=12)
+    tline(p, [("Inherits", DIM, 400), ("GunBase_AR", TEXT, 400), ("‹", FAINT, 400), ("GunBase", TEXT, 400)])
+    tline(p, [("!", RUST, 400), ("4 weapons inherit from this; DLC copy in DLCGameData/Deluxe", DIM, 400)])
+    p.space(12)
+    p.heading("Values")
+    p.hint("Dim = inherited · orange = your mod changes it · press a")
+    p.hint("value to change it.")
+
+    def val(path, value, kind="own", edit=None, indent=0):
+        x = PAD + indent
+        col = {"own": TEXT, "inh": FAINT, "mine": ORANGE}[kind]
+        p.out.append(f'<text x="{x}" y="{p.y + 15}" font-size="12" fill="{DIM if kind != "inh" else FAINT}" '
+                     f'dominant-baseline="central">{escape(path)}</text>')
+        vx = PAD + 200
+        if edit is None:
+            p.out.append(f'<text x="{vx}" y="{p.y + 15}" font-size="12" fill="{col}" dominant-baseline="central">'
+                         f'{escape(value)}</text>')
+        else:
+            p.out.append(f'<rect x="{vx - 6}" y="{p.y}" width="{W - PAD - vx + 6}" height="28" rx="5" fill="{FIELD}" '
+                         f'stroke="{ORANGE}"/><text x="{vx + 4}" y="{p.y + 14}" font-size="12" fill="{TEXT}" '
+                         f'dominant-baseline="central"><tspan fill="{FAINT}" text-decoration="line-through">{value}'
+                         f'</tspan>  {escape(edit)}</text>')
+        p.y += 30 if edit is not None else 23
+
+    val("BaseDamage", "10", edit="14")
+    val("Cost", "4800")
+    val("Weight", "3.6", "inh")
+    val("MagazineSize", "30", "inh")
+    val("RateOfFire", "650", "mine")
+    val("▾ Recoil", "2 entries", "inh")
+    val("Up", "1.2", indent=14)
+    val("Side", "0.4", "inh", indent=14)
+    val("› WeaponReloadTimePerAttachment", "3 entries", "inh")
+    p.space(12)
+    p.heading("Pending changes (1)")
+    p.button("Remove", W - PAD - 72, p.y, w=72)
+    tline(p, [("BaseDamage", TEXT, 400), ("10 → 14", ORANGE, 600)], gap=34)
+    box_y = p.y
+    lines = ["GunAK74_ST : struct.begin {bpatch}", "   BaseDamage = 14", "struct.end"]
+    p.out.append(f'<rect x="{PAD}" y="{box_y}" width="{W - 2 * PAD}" height="{18 * len(lines) + 30}" rx="6" '
+                 f'fill="{FIELD}" stroke="{FIELD_BORDER}"/>')
+    for i, l in enumerate(lines):
+        p.out.append(f'<text x="{PAD + 10}" y="{box_y + 18 + i * 18}" font-size="11.5" fill="{TEXT}" '
+                     f'font-family="Consolas, monospace" xml:space="preserve">{escape(l)}</text>')
+    p.out.append(f'<text x="{PAD + 10}" y="{box_y + 18 + len(lines) * 18 + 4}" font-size="11" fill="{DIM}">'
+                 f'→ …/WeaponGeneralSetupPrototypes/ImmersiveCampfires.cfg (added)</text>')
+    p.y += 18 * len(lines) + 38
+    p.buttons("Add to my mod", "Send to Claude", "Copy patch", first=True)
+    tline(p, [("✓", GREEN, 400), ("Checked: every field exists on GunAK74_ST", DIM, 400)])
+    p.y -= 4
+    return p.svg(None, "The Game data browser, an entry: name, file, inheritance, values with one being edited, "
+                       "the pending patch and Add to my mod")
+
+
 def band():
     """The Build & test band above the prompt: a packaging running, then the finished build with its next steps."""
     bw, bh = 640, 356
@@ -489,8 +621,8 @@ def band():
 if __name__ == "__main__":
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
-    drawings = (("dashboard", dashboard), ("newmod", newmod), ("quest", quest), ("conflicts", conflicts),
-                ("logs", logs), ("band", band))
+    drawings = (("allmods", allmods), ("dashboard", dashboard), ("newmod", newmod), ("quest", quest), ("conflicts", conflicts),
+                ("logs", logs), ("datasearch", datasearch), ("dataentry", dataentry), ("band", band))
     for name, draw in drawings:
         with open(os.path.join(out, f"{name}.svg"), "w", encoding="utf-8", newline="\n") as fh:
             fh.write(draw())

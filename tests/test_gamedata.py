@@ -220,6 +220,76 @@ class TestIndex(Fixture):
         self.assertNotIn("WARNING", ok)
         self.assertIn("{bpatch}", ok)
 
+    def run_json(self, *args):
+        return json.loads(self.run_cli("--json", *args))
+
+    def test_json_search_and_kinds(self):
+        r = self.run_json("search", "bread")
+        keys = [x["key"] for x in r["results"]]
+        self.assertIn("BigBread", keys)
+        self.assertIn("MyBread", keys)
+        bread = next(x for x in r["results"] if x["key"] == "Bread")
+        self.assertEqual((bread["kind"], bread["game"]), ("items", "Bread"))
+        ak = self.run_json("search", "ak74", "--kind", "weapons")["results"]
+        self.assertTrue(ak and all(x["kind"] == "weapons" for x in ak))
+        self.assertTrue(next(x for x in ak if x["key"] == "GunAK74_ST")["isMine"])
+        self.assertEqual(self.run_json("search", "ak74", "--kind", "npcs")["results"], [])
+
+    def test_json_find_fields_and_origins(self):
+        f = self.run_json("find", "BigBread")
+        self.assertEqual([c["name"] for c in f["chain"]], ["Bread", "[0]"])
+        fields = {x["path"]: x for x in f["fields"]}
+        self.assertEqual((fields["Weight"]["value"], fields["Weight"]["origin"]), ("2.0", "own"))
+        self.assertEqual((fields["Cost"]["value"], fields["Cost"]["origin"]), ("25", "inherited"))
+        self.assertTrue(fields["Effects"]["isStruct"])
+        gun = {x["path"]: x for x in self.run_json("find", "GunAK74_ST")["fields"]}
+        t = gun["WeaponReloadTimePerAttachment.[0].TacticalReloadTimeMultiplier"]
+        self.assertEqual((t["value"], t["origin"]), ("0.75", "mine"))
+        self.assertEqual(gun["WeaponReloadTimePerAttachment.[0].FullReloadTimeMultiplier"]["origin"], "own")
+        whole = self.run_json("find", "GunAK74_ST")
+        self.assertTrue(whole["hasDlc"])
+        self.assertEqual(whole["patchFile"], "GameLite/GameData/WeaponData/WeaponGeneralSetupPrototypes/MyMod.cfg")
+
+    def test_json_patch_write_merges(self):
+        tmp = tempfile.mkdtemp()
+        try:
+            content = os.path.join(tmp, "Content")
+            shutil.copytree(self.mod_content, content)
+
+            def patch(*args):
+                out = io.StringIO()
+                with contextlib.redirect_stdout(out):
+                    G.main(["--kit", self.kit, "--db", self.db, "--mod", "MyMod", "--mod-content", content, "--json",
+                            "patch", *args])
+                return json.loads(out.getvalue())
+            # a typo is refused, nothing written
+            with self.assertRaises(SystemExit):
+                patch("GunAK74_ST", "--set", "WeaponReloadTimePerAttachment[0].TacticalReloadTimeMultipler=0.5",
+                      "--write")
+            r = patch("GunAK74_ST", "--set", "WeaponReloadTimePerAttachment[0].FullReloadTimeMultiplier=0.8", "--write")
+            self.assertTrue(r["written"] and r["exists"])
+            node = C.parse(C.read_text(r["target"])).get("GunAK74_ST")
+            first = node.get("WeaponReloadTimePerAttachment").get("[0]")
+            self.assertEqual((first.get("TacticalReloadTimeMultiplier"), first.get("FullReloadTimeMultiplier")),
+                             ("0.75", "0.8"))  # the earlier change is kept
+            new = patch("Bread", "--set", "Cost=40", "--write")
+            self.assertFalse(new["exists"])
+            self.assertTrue(new["target"].replace("\\", "/").endswith("ItemPrototypes/ConsumablePrototypes/MyMod.cfg"))
+            self.assertEqual(C.parse(C.read_text(new["target"])).get("Bread").get("Cost"), "40")
+            again = patch("BigBread", "--set", "Cost=50", "--write")  # a second struct in the same patch file
+            self.assertEqual(again["target"], new["target"])
+            both = C.parse(C.read_text(again["target"]))
+            self.assertEqual((both.get("Bread").get("Cost"), both.get("BigBread").get("Cost")), ("40", "50"))
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_json_status(self):
+        self.assertFalse(self.run_json("status")["stale"])
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            G.main(["--db", os.path.join(self.tmp, "none.sqlite"), "--json", "status"])
+        self.assertFalse(json.loads(out.getvalue())["exists"])
+
     def test_status_and_missing(self):
         self.assertIn("up to date", self.run_cli("status"))
         with self.assertRaises(SystemExit):

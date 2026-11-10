@@ -96,18 +96,23 @@ idea, the features you want and the details to check. Press **Send to Claude** a
 
 | Type | What opens beside the chat |
 |---|---|
-| **`/zonecraft-panel`** | Your mod at a glance: which mod you're tracking (pick another from the list), the last build, the test copy in your game, the plan with every feature ticked off as it works in game, and Blueprint pastes with a **Copy** button |
+| **`/zonecraft-panel`** | **All mods**: every mod you work on with a status line (packaging now, last build, test copy, features done, conflicts); pick one to open its page: the last build, the test copy in your game, the plan with every feature ticked off as it works in game, and Blueprint pastes with a **Copy** button |
 | **`/zonecraft-newmod`** | The New mod form: write down the mod you want and how its packaged files are renamed into its Release Candidate folder (e.g. `zzzz_<Mod>_P` so it loads after its dependencies), send it to Claude as a brief |
 | **`/zonecraft-quest`** | The Quest designer: pick one of your mods, then lay out a quest (start, region, characters, stages with markers, dialogs, items, rewards, branches, world changes, rules, audio), save it in the mod and send it to Claude |
 | **`/zonecraft-conflicts`** | Conflict check of your mods, the installed mods and a collection folder: shared assets with the winner, whole cfg files, cfg patches touching the same field |
+| **`/zonecraft-data`** | The Game data browser: search the game's weapons, items, NPCs, quests and effects, see each one's values (its own, inherited, or changed by your mod), change a value and add the patch to your mod with one button |
 | **`/zonecraft-logs`** | Packaging, crashes with what they mean, and warnings from the game and Zone Kit logs |
 | Build & test band | Above the prompt while you press Package Mod: stage, time, errors; then the release candidate copy, Install test copy and what to test |
 
 Claude opens them by itself too when they help, and Clawd keeps you company in the corner.
 
 <p align="center">
-  <img src="assets/screens/dashboard.svg" alt="The zonecraft dashboard: the tracked mod, its build and test copy, the plan's features ticked off, Blueprint pastes with a Copy button, and Clawd at his campfire" width="380">
+  <img src="assets/screens/allmods.svg" alt="The dashboard's All mods page: every mod with a status line (packaging, build, test copy, features, conflicts) and its latest state; picking one opens its page" width="380">
   &nbsp;
+  <img src="assets/screens/dashboard.svg" alt="The zonecraft dashboard: the tracked mod, its build and test copy, the plan's features ticked off, Blueprint pastes with a Copy button, and Clawd at his campfire" width="380">
+</p>
+
+<p align="center">
   <img src="assets/screens/newmod.svg" alt="The New mod form: release candidate naming at the top, then the mod's name, main idea, features and details to check, a Send to Claude button, and Clawd plotting a route on his PDA" width="380">
 </p>
 
@@ -127,6 +132,14 @@ next steps:
     </td>
   </tr>
 </table>
+
+The Game data browser: search, then open an entry and change a value for your mod.
+
+<p align="center">
+  <img src="assets/screens/datasearch.svg" alt="The Game data browser, search: index status, mod picker, search box, category filters and results, with the entries your mod already changes marked" width="380">
+  &nbsp;
+  <img src="assets/screens/dataentry.svg" alt="The Game data browser, an entry: its in-game name, file, inheritance, values (own, inherited, changed by the mod) with one being edited, the patch and Add to my mod" width="380">
+</p>
 
 <p align="center"><sub>Example content; your own mods show up instead.</sub></p>
 
@@ -182,7 +195,7 @@ reads the game's logs and crash reports itself. A few things worth knowing:
 | [`tools/`](tools/) | `setup/`, `build/`, `editor/`, `blueprints/` (node library, paste checker), `pak/`. PowerShell plus the Python that ships inside the Zone Kit; nothing else to install |
 | [`templates/`](templates/) | The files a new mod starts with |
 | [`probe/`](probe/) | UE4SS debug probes (your PC only, never shipped) |
-| [`hooks/`](hooks/) | The panels beside the chat (`/zonecraft-panel`, `/zonecraft-newmod`, `/zonecraft-quest`, `/zonecraft-conflicts`, `/zonecraft-logs`) and the Build & test band |
+| [`hooks/`](hooks/) | The panels beside the chat (`/zonecraft-panel`, `/zonecraft-newmod`, `/zonecraft-quest`, `/zonecraft-conflicts`, `/zonecraft-logs`, `/zonecraft-data`) and the Build & test band |
 | [`assets/`](assets/) | The logo, the icon and Clawd's scenes, all drawn by Python scripts |
 | [`tests/`](tests/) | Offline tests for the Blueprint tools and the panels |
 | [`.claude-plugin/`](.claude-plugin/) | Plugin manifest, marketplace, icon |

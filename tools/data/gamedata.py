@@ -8,9 +8,13 @@ r"""Game data index: look up any .cfg prototype of the game (and the current mod
     py -I gamedata.py search <text> [--in FILE_RE] [--limit N]
                                                  SIDs / struct names / in-game names containing the text
     py -I gamedata.py kids <SID|Name>            prototypes that inherit from it (they keep their own overrides)
-    py -I gamedata.py patch <SID|Name> --set Path=Value [--set ...] [--remove Path]
+    py -I gamedata.py patch <SID|Name> --set Path=Value [--set ...] [--remove Path] [--write]
                                                  a ready {bpatch} patch and the file it belongs in, checked against
                                                  the resolved struct (unknown paths are flagged)
+                                                 --write adds it to the mod's patch file (merged with
+                                                 what is there; refused while a path is flagged, unless --force)
+    Any command: --mod-root DIR picks the mod (default: the folder you are in); --json prints one JSON object
+    (status, search [--kind weapons|items|npcs|quests|effects], find, patch) for the Game data panel.
 
 The index lives per machine in %LOCALAPPDATA%\zonecraft\gamedata\index.sqlite (never in a repo). The current mod's
 own cfgs (kit plugin folder, else the repo mirror zonekit/<Mod>/) are read live on every query, so they never go
@@ -188,7 +192,7 @@ CREATE INDEX entry_base ON entry(base);
 COLS = ("name", "sid", "file", "line", "end", "refurl", "refkey", "bpatch", "removenode", "src", "base", "is_patch")
 
 
-def build(kit, db_path):
+def build(kit, db_path, quiet=False):
     content = os.path.join(kit, "Stalker2", "Content")
     if not os.path.isdir(os.path.join(content, "GameLite", "GameData")):
         raise SystemExit(f"No GameLite/GameData under {content}: is the kit path right? (--kit)")
@@ -212,6 +216,8 @@ def build(kit, db_path):
     con.commit()
     con.close()
     os.replace(tmp, db_path)
+    if quiet:
+        return meta
     print(f"Indexed {meta['entries']} prototypes in {meta['files']} files, texts: {note} "
           f"({time.time() - t0:.0f} s) -> {db_path}")
 
@@ -475,14 +481,224 @@ def cmd_status(ix, a):
           else "up to date with the kit")
 
 
-def mod_paths(kit):
-    name = (hconf.MOD.get("name") if hconf else "") or ""
+# ----------------------------------------------------------------------------------------- JSON (the browser panel)
+# The zonecraft Game data panel (hooks/databrowser.tsx) runs these with --json and draws what they print.
+KINDS = {
+    "weapons": r"Weapon|Attach|Ammo",
+    "items": r"Item|Consumable|Artifact|Armor|Ammo|Quest.*Item|Upgrade",
+    "npcs": r"NPC|Character|Squad|Mutant|Monster|Faction|Trade",
+    "quests": r"Quest|Dialog|Journal|Note|Spawn",
+    "effects": r"Effect|Buff|Damage|Hit",
+}
+
+
+def kind_of(file):
+    for k in ("weapons", "npcs", "quests", "effects", "items"):
+        if re.search(KINDS[k], file, re.I):
+            return k
+    return "other"
+
+
+def is_mine(ix, row):
+    return any(e["name"] == row["name"] and e["is_patch"] and e["base"].lower() == row["base"].lower()
+               for e in ix.mod_entries)
+
+
+def _game_name(ix, row):
+    try:
+        node = ix.node(row)
+    except OSError:
+        node = None
+    return ix.name_of(row["sid"] or row["name"], node if isinstance(node, C.Node) else None)[0]
+
+
+def json_status(ix):
+    m = ix.meta
+    return {"exists": True, "kit": m.get("kit"), "builtMs": int(m.get("built", "0")) * 1000,
+            "entries": int(m.get("entries", "0") or 0), "files": int(m.get("files", "0") or 0),
+            "texts": m.get("texts_note"), "stale": ix.stale(), "mod": ix.mod, "modContent": ix.mod_content,
+            "modEntries": len(ix.mod_entries)}
+
+
+TEXT_SID = re.compile(r"^(?:sid_(?:items|character|weapons?|npc|quests?)_)?(.+?)(?:_(?:name|desc|description))?$", re.I)
+
+
+def json_search(ix, a):
+    like = f"%{a.text}%"
+    rx = re.compile(KINDS[a.kind], re.I) if a.kind and a.kind in KINDS else None
+    rows = ix._rows("(sid LIKE ? OR name LIKE ?) AND is_patch = 0 LIMIT ?", (like, like, a.limit * 6))
+    rows += ix._mod(lambda e: a.text.lower() in (e["sid"] or e["name"]).lower() and not e["is_patch"])
+    # in-game names: a text whose key names a prototype brings that prototype in
+    for key, _ in ix.con.execute("SELECT key, en FROM text WHERE en LIKE ? LIMIT ?", (like, a.limit)).fetchall():
+        m = TEXT_SID.match(key)
+        if m:
+            rows += [r for r in ix.lookup(m.group(1)) if not r["is_patch"]]
+    out, seen = [], set()
+    for r in rows:
+        if rx and not rx.search(r["file"]):
+            continue
+        k = (r["name"], r["file"])
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append({"key": r["sid"] or r["name"], "name": r["name"], "file": r["file"], "line": r["line"],
+                    "src": r["src"], "kind": kind_of(r["file"]), "game": _game_name(ix, r), "isMine": is_mine(ix, r)})
+        if len(out) >= a.limit:
+            break
+    more = len(rows) > len(out)
+    return {"query": a.text, "kind": a.kind or "all", "results": out, "more": more}
+
+
+def _flatten(node, own, patches, max_depth, limit=400):
+    """The resolved struct as rows for the panel: each field's path, value and where it comes from."""
+    rows = []
+
+    def origin(parts):
+        for p in patches:
+            v = C.lookup(p, parts)
+            if v is not None and not (isinstance(v, C.Node) and v.bpatch):
+                return "mine"
+            # a struct without {bpatch} on the way replaces everything under it
+            n = p
+            for part in parts:
+                if not isinstance(n, C.Node):
+                    break
+                n = n.get(part)
+                if isinstance(n, C.Node) and not n.bpatch:
+                    return "mine"
+        return "own" if C.lookup(own, parts) is not None else "inherited"
+
+    def walk(n, path, depth):
+        for k, v in n.items:
+            if len(rows) >= limit:
+                return
+            parts = path + [k]
+            if isinstance(v, C.Node):
+                rows.append({"path": ".".join(parts), "key": k, "depth": depth, "isStruct": True,
+                             "count": len(v.items), "value": None, "origin": origin(parts)})
+                if depth + 1 < max_depth:
+                    walk(v, parts, depth + 1)
+            else:
+                rows.append({"path": ".".join(parts), "key": k, "depth": depth, "isStruct": False,
+                             "value": None if v is C.REMOVED else v, "origin": origin(parts)})
+    walk(node, [], 0)
+    return rows, len(rows) >= limit
+
+
+def json_find(ix, a):
+    rows = ix.lookup(a.key)
+    row = pick(rows, a.key)
+    node, chain = ix.resolve(row)
+    own = ix.node(row)
+    patches = [p for p in (ix.node(e) for e in ix.patches_to(row)) if isinstance(p, C.Node)]
+    shown = node
+    for p in patches:
+        shown = C.apply_patch(shown, p) if isinstance(shown, C.Node) else shown
+    kids = ix.con.execute("SELECT COUNT(*) FROM entry WHERE refkey = ? COLLATE NOCASE AND is_patch = 0",
+                          (row["name"],)).fetchone()[0]
+    patch_rel = suggest_patch(row, ix.mod)
+    out = {
+        "key": row["sid"] or row["name"], "name": row["name"], "sid": row["sid"], "file": row["file"],
+        "line": row["line"], "src": row["src"], "path": ix.path_of(row), "kind": kind_of(row["file"]),
+        "game": ix.name_of(row["sid"] or row["name"], node if isinstance(node, C.Node) else None)[0],
+        "chain": [{"name": c["name"], "file": c["file"]} for c in chain[1:]],
+        "kids": kids, "hasDlc": any(r["src"] == "dlc" for r in rows) and row["src"] == "game",
+        "mine": [e["file"] for e in ix.patches_to(row)], "mod": ix.mod,
+        "patchFile": patch_rel, "isRemoved": node is C.REMOVED, "fields": [], "isCut": False,
+    }
+    if isinstance(shown, C.Node):
+        out["fields"], out["isCut"] = _flatten(shown, own if isinstance(own, C.Node) else C.Node(), patches, a.depth)
+    return out
+
+
+def _patch_checks(ix, row, sets, removes):
+    node, _ = ix.resolve(row)
+    warn = []
+    for s in sets:
+        if "=" not in s:
+            raise SystemExit(f"--set needs Path=Value: {s}")
+        path = C.split_path(s.split("=", 1)[0])
+        if C.lookup(node, path) is None:
+            warn.append(f"{'.'.join(path)} is not in the resolved struct: a typo, or a new field/element")
+    for r in removes:
+        if C.lookup(node, C.split_path(r)) is None:
+            warn.append(f"{r} does not exist: nothing to remove")
+    return warn
+
+
+def merge_patch(old, new):
+    """`new` patch node merged into `old` (both {bpatch} structs of one prototype): new values win."""
+    out = old.copy()
+    for k, v in new.items:
+        cur = out.get(k)
+        if isinstance(v, C.Node) and isinstance(cur, C.Node) and cur.bpatch and v.bpatch:
+            out.set(k, merge_patch(cur, v))
+        else:
+            out.set(k, v.copy() if isinstance(v, C.Node) else v)
+    return out
+
+
+def write_patch(path, name, text):
+    """Adds the patch for `name` to the file at `path`, merging with a patch of the same struct already there and
+    keeping everything else in the file as it is. Returns the file's new text."""
+    new = C.parse(text).get(name)
+    old_text = C.read_text(path) if os.path.exists(path) else ""
+    nl = "\r\n" if "\r\n" in old_text or not old_text else "\n"
+    lines = old_text.replace("\r\n", "\n").split("\n") if old_text else []
+    block = next((b for b in C.scan_top(lines) if b["name"] == name and not b["removenode"]), None)
+    if block:
+        old = C.parse("\n".join(lines[block["line"] - 1:block["end"]])).get(name)
+        merged = merge_patch(old, new) if isinstance(old, C.Node) and old.bpatch else new
+        lines[block["line"] - 1:block["end"]] = C.dump(merged).split("\n")
+    else:
+        while lines and not lines[-1].strip():
+            lines.pop()
+        lines += ([""] if lines else []) + C.dump(new).split("\n")
+    out = nl.join(lines) + nl
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write(out)
+    return out
+
+
+def json_patch(ix, a):
+    row = pick(ix.lookup(a.key), a.key)
+    sets, removes = a.set or [], a.remove or []
+    warn = _patch_checks(ix, row, sets, removes)
+    rel = suggest_patch(row, ix.mod)
+    target = os.path.join(ix.mod_content, rel).replace("/", os.sep) if ix.mod_content and ix.mod else None
+    text = C.build_patch(row["name"], sets, removes)
+    out = {"key": row["sid"] or row["name"], "file": rel, "target": target, "text": text, "warnings": warn,
+           "exists": bool(target and os.path.exists(target)), "written": False}
+    if a.write:
+        if not target:
+            raise SystemExit("No mod to write into: the mod's Content folder was not found in the kit "
+                             "(Stalker2/Mods/<Mod>/Content) or the mod folder (zonekit/<Mod>/Content).")
+        if warn and not a.force:
+            raise SystemExit("Not written: " + "; ".join(warn) + " (use --force if that is intended)")
+        write_patch(target, row["name"], text)
+        out["written"] = True
+    return out
+
+
+def mod_paths(kit, root=None):
+    """The mod's name and its Content folder: the kit's plugin folder, else the mod folder's mirror."""
+    mod = hconf.MOD if hconf else {}
+    repo = hconf.REPO if hconf else os.getcwd()
+    if root:
+        try:
+            with open(os.path.join(root, "mod.json"), encoding="utf-8-sig") as f:
+                mod = json.load(f)
+        except (OSError, ValueError):
+            mod = {}
+        repo = root
+    name = mod.get("name") or ""
     if not name:
         return None, None
-    in_kit = os.path.join(kit, "Stalker2", "Mods", name, "Content")
-    if os.path.isdir(in_kit):
+    in_kit = os.path.join(kit, "Stalker2", "Mods", name, "Content") if kit else ""
+    if in_kit and os.path.isdir(in_kit):
         return name, in_kit
-    mirror = os.path.join(hconf.REPO, "zonekit", name, "Content")
+    mirror = os.path.join(repo, "zonekit", name, "Content")
     return name, mirror if os.path.isdir(mirror) else None
 
 
@@ -492,6 +708,8 @@ def main(argv=None):
     ap.add_argument("--db", default=default_db())
     ap.add_argument("--mod", default=None, help="mod name (default: mod.json)")
     ap.add_argument("--mod-content", default=None, help="the mod's Content folder (default: kit plugin, else mirror)")
+    ap.add_argument("--mod-root", default=None, help="the mod folder (holding mod.json) to use instead of the current one")
+    ap.add_argument("--json", action="store_true", help="print one JSON object (for the Game data panel)")
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("build")
     sub.add_parser("status")
@@ -504,20 +722,44 @@ def main(argv=None):
     p.add_argument("text")
     p.add_argument("--in", dest="within", default=None, help="only files matching this regex")
     p.add_argument("--limit", type=int, default=30)
+    p.add_argument("--kind", choices=sorted(KINDS), default=None, help="only weapons, items, npcs, quests or effects")
     p = sub.add_parser("kids")
     p.add_argument("key")
     p = sub.add_parser("patch")
     p.add_argument("key")
     p.add_argument("--set", action="append")
     p.add_argument("--remove", action="append")
+    p.add_argument("--write", action="store_true", help="add it to the mod's patch file (merged with what is there)")
+    p.add_argument("--force", action="store_true", help="with --write: write even when a path is not in the struct")
     a = ap.parse_args(argv)
 
     kit = a.kit or (hconf.KIT if hconf else "")
     if a.cmd == "build":
         if not kit:
             raise SystemExit("No kit path: set up zonecraft (tools/setup/setup.ps1) or pass --kit.")
+        if a.json:
+            meta = build(kit, a.db, quiet=True)
+            print(json.dumps({"built": True, "entries": int(meta["entries"]), "files": int(meta["files"])}))
+            return
         return build(kit, a.db)
-    name, content = mod_paths(kit) if kit else (None, None)
+    name, content = mod_paths(kit, a.mod_root) if (kit or a.mod_root) else (None, None)
+    if a.json:
+        if a.cmd == "status" and not os.path.exists(a.db):
+            print(json.dumps({"exists": False, "kit": kit, "mod": a.mod or name}))
+            return
+        ix = Index(a.db, kit or None, a.mod or name, a.mod_content or content)
+        fn = {"find": json_find, "search": json_search, "patch": json_patch,
+              "status": lambda ix_, _a: json_status(ix_)}.get(a.cmd)
+        if fn is None:
+            raise SystemExit(f"--json is not available for {a.cmd}")
+        print(json.dumps(fn(ix, a)))
+        return
+    if a.cmd == "patch" and a.write:
+        ix = Index(a.db, kit or None, a.mod or name, a.mod_content or content)
+        r = json_patch(ix, a)
+        print(f"Added to {r['target']}:")
+        print(r["text"])
+        return
     ix = Index(a.db, kit or None, a.mod or name, a.mod_content or content)
     if ix.stale() and a.cmd != "status":
         print("# NOTE: the Zone Kit changed since this index was built; rebuild with `gamedata.py build`.")

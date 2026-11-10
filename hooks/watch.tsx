@@ -15,11 +15,11 @@ const POLL_MS = 4000
 const SHOW_FOR_MS = 20 * 60_000
 const EVENTS_MAX = 200
 
-const EMPTY: WatchState = {
+export const WATCH_EMPTY: WatchState = {
   package: {}, isGameRunning: false, isEditorRunning: false, events: [], crashes: [], lastPollMs: 0, dismissedMs: 0,
   isTestOpen: false,
 }
-export const watch = atom({ plugin: 'zonecraft', key: 'watch' } as const, EMPTY, { shape: 'watch-1' })
+export const watch = atom({ plugin: 'zonecraft', key: 'watch' } as const, WATCH_EMPTY, { shape: 'watch-1' })
 
 type Poll = {
   atMs: number

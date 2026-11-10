@@ -12,7 +12,7 @@ This repository is the zonecraft Claude Code plugin (the repo root is the plugin
 - Keep everything generic: no mod-specific history (that goes in a mod's `zonekit/README.md`) and no user- or
   machine-specific values (paths and accounts belong in `%LOCALAPPDATA%\zonecraft\settings.json`).
 - The repo is public: nothing private (credentials, emails, personal files) in knowledge, tools or commit messages.
-- Before pushing: `py -I tests/test_bp_nodes.py`, `py -I tests/test_gamedata.py`, `py -I tests/test_conflicts.py`, `claude plugin test .`, `claude plugin validate .`, and bump `version` in
+- Before pushing: `py -I tests/test_bp_nodes.py`, `py -I tests/test_gamedata.py`, `py -I tests/test_conflicts.py`, `claude plugin test .` (the panels' tests in `tests/*.test.tsx`), `claude plugin validate .`, and bump `version` in
   `.claude-plugin/plugin.json` for a release (installed copies update only on a new version).
 - The logo and the icon come from `assets/make_logo.py` (`<out>.gif` for the logo, `<out>.png` for the icon).
   Clawd's scenes come from `assets/clawd_scenes.py`: `hooks/clawd.ts` for the panels, `assets/clawd` for the README

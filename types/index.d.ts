@@ -207,6 +207,100 @@ export type ConflictReport = {
   errors: string[]
 }
 
+/** gamedata.py --json status: the index on this PC. */
+export type DataStatus = {
+  exists: boolean
+  kit?: string
+  builtMs?: number
+  entries?: number
+  files?: number
+  texts?: string
+  stale?: boolean
+  mod?: string | null
+  modContent?: string | null
+  modEntries?: number
+}
+
+/** One search result. */
+export type DataHit = {
+  key: string
+  name: string
+  file: string
+  line: number
+  src: string
+  kind: string
+  game: string | null
+  isMine: boolean
+}
+
+/** One field of a resolved prototype; origin: its own value, inherited, or set by the mod's patch. */
+export type DataField = {
+  path: string
+  key: string
+  depth: number
+  isStruct: boolean
+  count?: number
+  value: string | null
+  origin: 'own' | 'inherited' | 'mine'
+}
+
+/** gamedata.py --json find. */
+export type DataEntry = {
+  key: string
+  name: string
+  sid: string | null
+  file: string
+  line: number
+  src: string
+  path: string
+  kind: string
+  game: string | null
+  chain: { name: string; file: string }[]
+  kids: number
+  hasDlc: boolean
+  mine: string[]
+  mod: string | null
+  patchFile: string
+  isRemoved: boolean
+  fields: DataField[]
+  isCut: boolean
+}
+
+/** gamedata.py --json patch. */
+export type DataPatch = {
+  key: string
+  file: string
+  target: string | null
+  text: string
+  warnings: string[]
+  exists: boolean
+  written: boolean
+}
+
+/** What the Game data panel holds. */
+export type DataState = {
+  modRoot: string
+  page: 'search' | 'entry'
+  query: string
+  kind: string
+  status?: DataStatus
+  hits?: DataHit[]
+  hasMore: boolean
+  entry?: DataEntry
+  /** Struct paths opened in the entry's field list. */
+  open: string[]
+  /** The field being edited, '' for none. */
+  editing: string
+  /** Changes waiting to be written: field path → new value. */
+  edits: Record<string, string>
+  preview?: DataPatch
+  /** What runs now: '', 'status', 'search', 'find', 'patch', 'write' or 'build'. */
+  busy: string
+  error?: string
+  recent: string[]
+  favorites: string[]
+}
+
 declare module 'claude-code' {
   interface PluginState {
     zonecraft: {
@@ -216,6 +310,10 @@ declare module 'claude-code' {
       copied: Shaped<{ path: string; atMs: number }>
       /** The mod folder picked in the panel this session; '' for none (the session's own mod is shown). */
       tracked: Shaped<string>
+      /** Which page the dashboard shows: every mod, one mod, or chosen from where the session is ('auto'). */
+      view: Shaped<'auto' | 'mods' | 'mod'>
+      /** The Game data panel: search, the open entry, pending edits. */
+      data: Shaped<DataState>
       /** The New mod form as filled in so far (also kept in $.store, so a new session finds it). */
       draft: Shaped<NewModDraft>
       /** Packaging, logs and crashes, from tools/watch/zcwatch.py. */

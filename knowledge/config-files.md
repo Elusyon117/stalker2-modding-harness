@@ -19,7 +19,13 @@ Run it with any Python 3 (`py -I <zonecraft>\tools\data\gamedata.py ...`) from i
 - `search <text>`: SIDs, struct names and in-game texts containing the text (`--in RE` limits to files).
 - `kids <SID>`: everything inheriting from it. A patch on the parent does not reach fields a child overrides.
 - `patch <SID> --set Path.To[0].Field=Value [--remove Path.[2]]`: prints a `{bpatch}` patch and its file; a path that
-  is not in the resolved struct is flagged as a probable typo.
+  is not in the resolved struct is flagged as a probable typo. `--write` adds it to the mod's patch file (kit plugin
+  folder, else the mirror), merged with a patch of the same struct already there; refused while a path is flagged.
+- `--mod-root <mod folder>` works on another mod than the one you are in; `--json` prints one JSON object (status,
+  search with `--kind weapons|items|npcs|quests|effects`, find with each field's origin, patch).
+- **`/zonecraft-data`** is the same index as a panel for the tester: search, open an entry, press a value to change
+  it, **Add to my mod** (`patch --write`) or **Send to Claude**. When the tester adds a change there, package the mod
+  and test it like any other cfg patch.
 The current mod's cfgs (kit plugin folder, else the `zonekit/<Mod>/` mirror) are read live, never cached. Use the
 index for every SID you put in a cfg, quest node or Blueprint: a wrong SID costs a cook and a test run, and it is what
 the Broken Game Data validator keeps catching (`quests.md`). The resolved fields follow inheritance the way the files

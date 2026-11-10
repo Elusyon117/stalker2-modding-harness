@@ -1,14 +1,15 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
-import type { Dashboard, Paste, Status } from '../types'
+import type { ConflictReport, Dashboard, ModChoice, Paste, Status, WatchState } from '../types'
 import type { SceneName } from './art'
 import { age, chooseMod, dashboard, findModRoot, knownMods, readSettings } from './data'
 import { conflictsSessionStart, registerConflicts } from './conflicts'
+import { dataSessionStart, registerData } from './databrowser'
 import { newModSessionStart, registerNewMod } from './newmod'
 import { questSessionStart, registerQuest } from './questform'
 import { action, ORANGE, RUST, scene, section, top } from './theme'
-import { registerWatch, watchSessionStart } from './watch'
+import { registerWatch, WATCH_EMPTY, watchSessionStart } from './watch'
 
 const PANE = 'zonecraft'
 const TITLE = 'zonecraft'
@@ -17,6 +18,12 @@ const TOOL = 'mcp__zonecraft__open_panel'
 const tick = atom({ plugin: 'zonecraft', key: 'tick' } as const, 0, { shape: 'tick-1' })
 const copied = atom({ plugin: 'zonecraft', key: 'copied' } as const, { path: '', atMs: 0 }, { shape: 'copied-1' })
 const tracked = atom({ plugin: 'zonecraft', key: 'tracked' } as const, '', { shape: 'tracked-1' })
+// Read here too, for the All mods page: what the watcher saw (watch.tsx) and the last conflict check (conflicts.tsx).
+const watch = atom({ plugin: 'zonecraft', key: 'watch' } as const, WATCH_EMPTY, { shape: 'watch-1' })
+const conflictState = atom({ plugin: 'zonecraft', key: 'conflicts' } as const,
+  { report: undefined as ConflictReport | undefined, isScanning: false, collection: '', onlyYours: false },
+  { shape: 'conflicts-1' })
+const view = atom({ plugin: 'zonecraft', key: 'view' } as const, 'auto' as 'auto' | 'mods' | 'mod', { shape: 'view-1' })
 
 // Kept across sessions in $.store: the mod folders sessions were opened in, and the mod last picked in the panel.
 const SEEN = 'mods-seen'
@@ -39,11 +46,48 @@ const CHANGERS = new Set(['Bash', 'PowerShell', 'Write', 'Edit', 'NotebookEdit']
 const MARK: Record<Status, string> = { ok: '✓', warn: '!', bad: '✗', none: '·' }
 const COLOR: Record<Status, string | undefined> = { ok: 'success', warn: RUST, bad: 'error', none: undefined }
 
+/** The dashboard's page when nobody picked one: the mod this session is in, or the only mod; else every mod. */
+export function autoView(mods: readonly ModChoice[]): 'mods' | 'mod' {
+  return mods.length <= 1 || mods.some(m => m.isHere) ? 'mod' : 'mods'
+}
+
+type Part = { text: string; status: Status | 'busy' }
+
+/** One mod's status line on the All mods page: the build (or the packaging running now), the test copy, the plan,
+ * and conflicts with it from the last conflict check. */
+export function statusParts(d: Dashboard, w: WatchState | undefined, report: ConflictReport | undefined,
+  now: number): Part[] {
+  const out: Part[] = []
+  const name = (d.modName ?? '').toLowerCase()
+  const pkg = w?.package
+  const mine = !!name && (pkg?.mod ?? '').toLowerCase() === name
+  if (mine && pkg?.active) {
+    const pct = pkg.progress && pkg.progress[1] ? ` ${Math.round((100 * pkg.progress[0]) / pkg.progress[1])}%` : ''
+    out.push({ text: `packaging ${pkg.phase ?? ''}${pct}`.trim(), status: 'busy' })
+  } else if (mine && pkg?.result === 'failed' && (pkg.endedMs ?? 0) > (d.cookMs ?? 0)) {
+    out.push({ text: 'packaging failed', status: 'bad' })
+  } else {
+    out.push(d.cookMs !== undefined ? { text: `built ${age(d.cookMs, now)}`, status: 'none' }
+      : { text: d.kit ? 'not built yet' : 'build unknown', status: 'none' })
+  }
+  if (d.testPakMs === undefined) out.push({ text: 'no test copy', status: 'none' })
+  else if (d.cookMs !== undefined && d.testPakMs < d.cookMs) out.push({ text: 'old test copy', status: 'warn' })
+  else out.push({ text: 'test copy ✓', status: 'ok' })
+  if (d.features.length) {
+    const done = d.features.filter(f => f.isDone).length
+    out.push({ text: `${done}/${d.features.length} features`, status: done === d.features.length ? 'ok' : 'none' })
+  }
+  const clashes = (report?.conflicts ?? []).filter(c => c.verdict !== 'same' && c.mods.some(m => m.name.toLowerCase() === name))
+  if (name && clashes.length) out.push({ text: `${clashes.length} conflict${clashes.length === 1 ? '' : 's'}`, status: 'warn' })
+  return out
+}
+
 export const register: Register = on => {
   registerNewMod(on)
   registerWatch(on)
   registerQuest(on)
   registerConflicts(on)
+  registerData(on)
 
   on('session.start', async ($, e, next) => {
     // Bash children (a mod's gen_*.py through zonekit/tools/zonecraft_path.py) find zonecraft through this.
@@ -58,6 +102,7 @@ export const register: Register = on => {
     await watchSessionStart($)
     await questSessionStart($)
     await conflictsSessionStart($)
+    await dataSessionStart($)
     await $.command.register({
       name: 'zonecraft-panel',
       description: 'Show the zonecraft panel: the current mod, its last cook and test copy, and Blueprint pastes to copy',
@@ -107,25 +152,73 @@ export const register: Register = on => {
     const picked = await read($, tracked)
     const lastPicked = await $.store.get(LAST)
     const current = chooseMod(mods, picked, typeof lastPicked === 'string' ? lastPicked : '')
-    const d: Dashboard = await dashboard($, current?.root, settings)
+    const els = { Box, Text, Button }
+    const page = await read($, view)
+    const shown = page === 'auto' ? autoView(mods) : page
 
+    // Picking a mod on the All mods page opens its own page, and is remembered for the next session.
     const pick = async (root: string) => {
       await update($, tracked, () => root)
       await $.store.set(LAST, root)
+      await update($, view, () => 'mod')
     }
 
-    // The mod picker, where the surface draws one and there is more than one mod to pick from.
+    if (shown === 'mods' && mods.length > 1) {
+      const w = await read($, watch)
+      const report = (await read($, conflictState)).report
+      const boards = await Promise.all(mods.map(m => dashboard($, m.root, settings)))
+      const crash = w.crashes[0] && now - w.crashes[0].atMs < 30 * 60_000 ? w.crashes[0] : undefined
+      const partColor = (s: Part['status']) => (s === 'busy' ? ORANGE : COLOR[s])
+      const modRow = (m: ModChoice, b: Dashboard, i: number) => {
+        const parts = statusParts(b, w, report, now)
+        const lead = parts.some(p => p.status === 'bad') ? 'bad' : parts.some(p => p.status === 'busy') ? 'busy'
+          : parts.some(p => p.status === 'warn') ? 'warn' : 'ok'
+        return (
+          <Box flexDirection="column" key={`mod:${i}`}>
+            <Box flexDirection="row" gap={1}>
+              <Text color={partColor(lead === 'ok' ? 'ok' : lead)}>{lead === 'busy' ? '●' : MARK[lead]}</Text>
+              <Button key={`open:${i}`} onPress={() => pick(m.root)}><Text bold>{m.name}</Text></Button>
+              {m.isHere ? <Text dimColor>this folder</Text> : null}
+              {m.root.toLowerCase() === current?.root.toLowerCase() && !m.isHere ? <Text dimColor>last opened</Text> : null}
+            </Box>
+            <Box flexDirection="row" flexWrap="wrap" paddingLeft={2}>
+              {parts.map((p, k) => (
+                <Text key={`part:${i}:${k}`} color={partColor(p.status)} dimColor={p.status === 'none'}>
+                  {`${k ? ' · ' : ''}${p.text}`}
+                </Text>
+              ))}
+            </Box>
+            {b.state ? <Box paddingLeft={2}><Text dimColor wrap="truncate">{b.state}</Text></Box> : null}
+          </Box>
+        )
+      }
+      return (
+        <Box flexDirection="column" gap={1}>
+          {top(els, e.surface === 'terminal', scene($, e, MOOD.none.scene, MOOD.none.alt),
+            section(els, 'mods', `Your mods (${mods.length})`, 'Pick one to open its page.',
+              crash
+                ? <Text color="error" wrap="wrap">{`✗ The game crashed ${age(crash.atMs, now)}: ${crash.family}. See /zonecraft-logs.`}</Text>
+                : null))}
+          {mods.map((m, i) => modRow(m, boards[i], i))}
+          <Box flexDirection="row" gap={1}>
+            <Button key="newmod" onPress={() => $.ui.open({ id: 'zonecraft-newmod', title: 'New mod' })}>New mod</Button>
+            <Button key="refresh" dimColor onPress={() => void update($, tick, n => n + 1)}>Refresh</Button>
+          </Box>
+        </Box>
+      )
+    }
+
+    const d: Dashboard = await dashboard($, current?.root, settings)
+
+    // Back to the All mods page, where there is more than one mod.
     const picker = () => {
       if (mods.length < 2 || !current) return null
-      const options = mods.map(m => ({ value: m.root, label: m.isHere ? `${m.name} (this folder)` : m.name }))
-      if (e.surface === 'terminal' || e.surface === 'desktop' || e.surface === 'vscode') {
-        const { Select } = $.ui.resolve({ ...e, surface: e.surface })
-        return <Select key="mod" label="Tracking" options={options} value={current.root} onSelect={pick} />
-      }
-      return <Text dimColor>{`Tracking ${current.name} (${mods.length} mods; pick another on your PC)`}</Text>
+      return (
+        <Box flexDirection="row" key="back">
+          <Button key="all-mods" dimColor onPress={() => update($, view, () => 'mods')}>{`‹ All mods (${mods.length})`}</Button>
+        </Box>
+      )
     }
-
-    const els = { Box, Text, Button }
     const mood = MOOD[!d.modRoot ? 'none' : d.features.length && d.features.every(f => f.isDone) ? 'done' : 'working']
 
     const row = (label: string, value: string, status: Status = 'none') => (
