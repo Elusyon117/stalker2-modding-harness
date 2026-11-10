@@ -18,7 +18,10 @@ of 20-200 nodes (event graphs and anim graphs).
    and `chain(a, b, c)` for exec flow. They write the exact text of nodes already pasted and compiled in shipped mods
    (`tests/test_bp_nodes.py` checks that); write pins by hand only for node kinds it does not have yet.
    Then run `verify_paste.py lint <file>` (no editor): duplicate names / pin ids, one-sided links, calls the editor
-   drops or prunes silently, and the list of external links the tester has to wire by hand.
+   drops or prunes silently, and the list of external links the tester has to wire by hand. It also writes
+   `<paste>.view.json` (`paste_view.py`): the dashboard's Show nodes draws it, one comment box at a time, as the
+   graph editor will show it, with the hand-wired links as dashed orange stubs. Name their far ends in
+   `<paste>.meta.json`, `{"external": {"K2Node_CallFunction_77": "Stop Healing"}}`, or they show the node's class.
 3. Put it on the clipboard (`Set-Clipboard -Value (Get-Content <file> -Raw)`), the tester clicks into the graph and
    presses Ctrl+V, then wires only the 1-3 pins that connect to nodes outside the block. **Links to nodes that are
    not in the paste are dropped**, so keep external wiring minimal and name those pins exactly.

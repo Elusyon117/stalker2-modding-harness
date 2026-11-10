@@ -7,6 +7,7 @@ import { age, chooseMod, dashboard, findModRoot, knownMods, readSettings } from 
 import { conflictsSessionStart, registerConflicts } from './conflicts'
 import { dataSessionStart, registerData } from './databrowser'
 import { newModSessionStart, registerNewMod } from './newmod'
+import { hideNodes, NODES_NONE, nodesBody, registerNodes, showNodes } from './pasteview'
 import { questSessionStart, registerQuest } from './questform'
 import { action, ORANGE, RUST, scene, section, top } from './theme'
 import { registerWatch, WATCH_EMPTY, watchSessionStart } from './watch'
@@ -23,6 +24,8 @@ const watch = atom({ plugin: 'zonecraft', key: 'watch' } as const, WATCH_EMPTY, 
 const conflictState = atom({ plugin: 'zonecraft', key: 'conflicts' } as const,
   { report: undefined as ConflictReport | undefined, isScanning: false, collection: '', onlyYours: false },
   { shape: 'conflicts-1' })
+// The paste shown as nodes (pasteview.tsx keeps it).
+const nodesShown = atom({ plugin: 'zonecraft', key: 'nodes' } as const, NODES_NONE, { shape: 'nodes-1' })
 const view = atom({ plugin: 'zonecraft', key: 'view' } as const, 'auto' as 'auto' | 'mods' | 'mod', { shape: 'view-1' })
 
 // Kept across sessions in $.store: the mod folders sessions were opened in, and the mod last picked in the panel.
@@ -88,6 +91,7 @@ export const register: Register = on => {
   registerQuest(on)
   registerConflicts(on)
   registerData(on)
+  registerNodes(on)
 
   on('session.start', async ($, e, next) => {
     // Bash children (a mod's gen_*.py through zonekit/tools/zonecraft_path.py) find zonecraft through this.
@@ -286,6 +290,11 @@ export const register: Register = on => {
         open.length > 5 ? <Text dimColor>{`  and ${open.length - 5} more in PLAN.md`}</Text> : null)
     }
 
+    // The paste shown as nodes, drawn ahead (the rows below are built synchronously).
+    const shownNodes = await read($, nodesShown)
+    const nodesPaste = d.pastes.find(p => p.path === shownNodes.path)
+    const nodesView = nodesPaste ? await nodesBody($, e, els, shownNodes, false) : null
+
     const pasteRow = (p: Paste) => {
       const isCopied = last.path === p.path && now - last.atMs < 60_000
       const copy = async (press: { surface?: string }) => {
@@ -300,6 +309,9 @@ export const register: Register = on => {
             {action(els, `copy:${p.name}`, isCopied ? 'Copied' : 'Copy', copy)}
             <Text bold>{p.name}</Text>
             <Text dimColor>{p.nodes} nodes · {age(p.mtimeMs, now)}</Text>
+            {p === nodesPaste
+              ? <Button key={`hide:${p.name}`} dimColor onPress={() => void hideNodes($)}>Hide nodes</Button>
+              : <Button key={`nodes:${p.name}`} dimColor onPress={() => void showNodes($, p.path, p.view === 'fresh')}>Show nodes</Button>}
           </Box>
           <Box flexDirection="row" gap={1} paddingLeft={2}>
             <Text color={COLOR[p.lint]}>{MARK[p.lint]}</Text>
@@ -313,6 +325,16 @@ export const register: Register = on => {
               </Box>
             )
             : null}
+          {p === nodesPaste && p.view !== 'fresh'
+            ? (
+              <Box flexDirection="row" gap={1} paddingLeft={2}>
+                <Text color={RUST}>!</Text>
+                <Text dimColor>the paste changed since this picture</Text>
+                <Button key={`redraw:${p.name}`} dimColor onPress={() => void showNodes($, p.path, false)}>Redraw</Button>
+              </Box>
+            )
+            : null}
+          {p === nodesPaste ? <Box paddingLeft={2} paddingTop={1}>{nodesView}</Box> : null}
         </Box>
       )
     }

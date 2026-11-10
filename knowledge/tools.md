@@ -33,7 +33,8 @@ folder) live outside every repo: `tools/config.json` has only generic defaults, 
 | `tools/editor/create_marker.py` | headless | permanent compatibility marker asset |
 | `tools/blueprints/bp_t3d.py`, `bp_graph.py` | library | write Blueprint paste text (nodes, pins, both-ended links, comment boxes, layout) |
 | `tools/blueprints/bp_nodes.py` | library | ready-made nodes on `bp_graph`: events, input actions, calls, variables, Branch, Sequence, Delay, loops, casts, delegates |
-| `tools/blueprints/verify_paste.py lint <f>` / `compare <f> [<export> \| --asset P]` | shell (compare `--asset`: open editor) | checks paste text before pasting; after pasting, compares it with the asset's export (missing nodes, lost links) |
+| `tools/blueprints/verify_paste.py lint <f>` / `compare <f> [<export> \| --asset P]` | shell (compare `--asset`: open editor) | checks paste text before pasting (and draws its nodes picture); after pasting, compares it with the asset's export (missing nodes, lost links) |
+| `tools/blueprints/paste_view.py <f>` | shell | draws paste text as the graph editor will show it: `<paste>.view.json` for the panel's Show nodes |
 | `tools/blueprints/t3d_lift.py` | library | lift nodes from an exported T3D into paste text |
 | `tools/pak/zen_names.py <dir> [--imports] [--filter RE]` | shell | names / imports of cooked (Zen) packages |
 | `tools/pak/dump_names.py <uasset>` | shell | FName table of an uncooked package (keys, actions, modifiers) |

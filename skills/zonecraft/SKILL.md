@@ -91,7 +91,8 @@ A **mod folder** has `mod.json` and a `CLAUDE.md` at its root, and holds only th
 ## Blueprint paste text in one breath
 In the mod's `zonekit/tools/gen_*.py`: `import zonecraft_path`, then build the graph with `bp_nodes.Nodes(graph,
 self_class=...)` (events, input actions, calls, variables, Branch, Sequence, Delay, loops, casts, delegates), call
-`graph.layout_tree()` and write the text. Run `tools/blueprints/verify_paste.py lint <file>`, put the text on the
+`graph.layout_tree()` and write the text. Run `tools/blueprints/verify_paste.py lint <file>` (it also draws the
+panel's Show nodes picture; name the far ends of hand-wired links in `<paste>.meta.json`), put the text on the
 clipboard for the tester to paste with Ctrl+V, and after they compile and save run `verify_paste.py compare <file>
 --asset /<Mod>/...` to check every node arrived with its links. Details and traps: `knowledge/blueprints.md`.
 

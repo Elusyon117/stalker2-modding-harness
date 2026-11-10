@@ -121,9 +121,13 @@ export async function listPastes($: Engine, modRoot: string, limit = 6): Promise
     }
     const lint = await report($, `${base}.lint.json`)
     const cmp = await report($, `${base}.compare.json`)
+    const viewMs = entries.find(e => e.name === `${f.name.slice(0, -4)}.view.json`)?.mtimeMs
+    // the picture is drawn from the paste and the names in <paste>.meta.json: newer than both, or redrawn
+    const srcMs = Math.max(f.mtimeMs, entries.find(e => e.name === `${f.name.slice(0, -4)}.meta.json`)?.mtimeMs ?? 0)
     out.push({
       path, name: f.name.slice(0, -4), mtimeMs: f.mtimeMs, nodes,
       lint: lint.status, lintText: lint.text, compare: cmp.status, compareText: cmp.text,
+      view: viewMs === undefined ? 'none' : viewMs >= srcMs ? 'fresh' : 'stale',
     })
   }
   return out

@@ -256,6 +256,12 @@ def main(argv):
         summary = (f"{len(nodes)} nodes, " + (f"{len(errors)} problems: {errors[0]}" if errors else "no problems")
                    + (f", {ext} wire(s) to connect by hand" if ext else ""))
         write_report(paste_path, "lint", not errors, summary, errors + notes)
+        try:                     # the panel's "Show nodes" picture; a paste it cannot draw still lints
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            import paste_view
+            paste_view.write_view(paste_path)
+        except Exception as e:  # noqa: BLE001
+            print(f"note: could not draw the nodes picture ({e})")
         return 1 if errors else 0
     export_path = export_asset(asset) if asset else (argv[2] if len(argv) > 2 else None)
     if not export_path:

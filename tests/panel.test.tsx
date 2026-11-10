@@ -14,6 +14,17 @@ const PASTE = 'Begin Object Class=/Script/BlueprintGraph.K2Node_Event Name="A"\n
   'Begin Object Class=/Script/BlueprintGraph.K2Node_IfThenElse Name="B"\nEnd Object\n' +
   'Begin Object Class=/Script/UnrealEd.EdGraphNode_Comment Name="C"\nEnd Object\n'
 
+const pic = (w: number, h: number) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="-100 -50 ${w} ${h}" role="img"><rect/></svg>`
+const VIEW = {
+  version: 1,
+  views: [
+    { title: 'Tick: heal while seated', nodes: 12, hand: [], minx: -100, miny: -50, w: 3000, h: 600, svg: pic(3000, 600) },
+    { title: 'Input: stand up', nodes: 2, hand: [], minx: -100, miny: -50, w: 800, h: 500, svg: pic(800, 500) },
+  ],
+  hand: ['Branch (only while seated) › false → Stop Healing'],
+}
+
 const FILES: Record<string, string> = {
   [`${MOD}/mod.json`]: '{"name": "MyMod", "short": "MM"}',
   [`${MOD}/CLAUDE.md`]: '# MyMod\n\n## Current state\n- 2026-11-01: repo created.\n- 2026-11-07: build 3 sits by the fire.\n\n## Key facts\n',
@@ -27,11 +38,13 @@ const FILES: Record<string, string> = {
   ].join('\n'),
   [`${MOD}/zonekit/paste/seat_tick.txt`]: PASTE,
   [`${MOD}/zonekit/paste/seat_tick.lint.json`]: '{"ok": true, "summary": "2 nodes, no problems"}',
+  [`${MOD}/zonekit/paste/seat_tick.view.json`]: JSON.stringify(VIEW),
 }
 const DIRS: Record<string, { name: string; kind: 'file' | 'dir'; mtimeMs: number }[]> = {
   [`${MOD}/zonekit/paste`]: [
     { name: 'seat_tick.txt', kind: 'file', mtimeMs: NOW - 2 * MIN },
     { name: 'seat_tick.lint.json', kind: 'file', mtimeMs: NOW - 2 * MIN },
+    { name: 'seat_tick.view.json', kind: 'file', mtimeMs: NOW - 2 * MIN },
   ],
   [MODS]: [
     { name: 'MyMod', kind: 'dir', mtimeMs: NOW },
@@ -173,4 +186,63 @@ test('with no mod anywhere the panel says how to get one', async ($, on) => {
   expect((await ui.find({ type: 'Text', text: /None yet/ }))?.text).toContain('zonekit/paste')
   expect(await ui.find({ key: 'scene:exploring' })).toBeDefined()
   await ui.unmount()
+})
+
+test('Show nodes draws the paste one comment box at a time, with zoom, moves and the wires to draw by hand', async ($, on) => {
+  fakePc(on, { cwd: MOD })
+  const viewBox = async (ui: Awaited<ReturnType<typeof $.ui.mount>>) => {
+    const sources = (await ui.findAll({ type: 'Svg' })).map(x => String((x.props as { source?: string }).source))
+    const m = /viewBox="([^"]*)"/.exec(sources.find(src => src.endsWith('<rect/></svg>')) ?? '')
+    return m?.[1]
+  }
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await viewBox(ui)).toBeUndefined()
+  await ui.press({ key: 'nodes:seat_tick' })
+  expect(await viewBox(ui)).toBe('-100 -50 700 600')          // the closest zoom, at the left end
+  expect((await ui.find({ type: 'Text', text: /Stop Healing/ }))?.text).toContain('Branch (only while seated)')
+  await ui.press({ key: 'dash:right' })
+  expect(await viewBox(ui)).toBe('320 -50 700 600')
+  await ui.press({ key: 'dash:out' })
+  expect(await viewBox(ui)).toBe('-100 -50 3000 600')         // the whole box
+  await ui.press({ key: 'dash:tab:1' })
+  expect(await viewBox(ui)).toBe('-100 -50 800 500')          // a short box is drawn whole
+  await ui.press({ key: 'hide:seat_tick' })
+  expect(await viewBox(ui)).toBeUndefined()
+  await ui.unmount()
+
+  // a terminal lists the wires to draw by hand and says where the picture shows
+  const term = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await term.press({ key: 'nodes:seat_tick' })
+  expect((await term.find({ type: 'Text', text: /Stop Healing/ }))?.text).toContain('false')
+  expect((await term.find({ type: 'Text', text: /desktop app/ }))?.text).toContain('picture')
+  await term.unmount()
+})
+
+test('a picture older than the paste or its names is drawn again: errors show, Redraw runs paste_view.py', async ($, on) => {
+  fakePc(on, { cwd: MOD })
+  const dir = DIRS[`${MOD}/zonekit/paste`]
+  dir.push({ name: 'seat_tick.meta.json', kind: 'file', mtimeMs: NOW - MIN })   // names added after the picture
+  const runs: string[][] = []
+  let result = { exitCode: 1, stdout: '', stderr: 'Traceback\nValueError: boom' }
+  on('process.run', (_, e) => {
+    runs.push([...e.argv])
+    return { value: result }
+  })
+  try {
+    const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    await ui.press({ key: 'nodes:seat_tick' })
+    expect(runs).toHaveLength(1)
+    expect(runs[0].some(a => a.endsWith('tools/blueprints/paste_view.py'))).toBe(true)
+    expect(runs[0].at(-1)).toBe(`${MOD}/zonekit/paste/seat_tick.txt`)
+    expect((await ui.find({ type: 'Text', text: /Could not draw/ }))?.text).toContain('boom')
+
+    result = { exitCode: 0, stdout: '{"views": 2, "nodes": 14, "hand": 1}', stderr: '' }
+    await ui.press({ key: 'redraw:seat_tick' })
+    expect(runs).toHaveLength(2)
+    expect(await ui.find({ type: 'Text', text: /Could not draw/ })).toBeUndefined()
+    expect((await ui.find({ type: 'Text', text: /Stop Healing/ }))?.text).toContain('Branch')
+    await ui.unmount()
+  } finally {
+    dir.pop()
+  }
 })

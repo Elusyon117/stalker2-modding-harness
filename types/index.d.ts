@@ -10,7 +10,28 @@ export type Paste = {
   lintText: string
   compare: Status
   compareText: string
+  /** <paste>.view.json, the nodes picture paste_view.py draws: missing, newer than the paste, or older. */
+  view: 'none' | 'fresh' | 'stale'
 }
+
+/** One picture of <paste>.view.json: a comment box (or the nodes in none), in graph units. */
+export type PasteViewPart = {
+  title: string
+  nodes: number
+  hand: string[]
+  minx: number
+  miny: number
+  w: number
+  h: number
+  svg: string
+}
+
+/** <paste>.view.json: tools/blueprints/paste_view.py's pictures of a paste, and the wires to draw by hand. */
+export type PasteViewFile = { version: number; views: PasteViewPart[]; hand: string[] }
+
+/** The paste whose nodes are shown ('' for none) and where its picture looks: the box, the zoom step (0 = whole
+ * box) and the window's left/top in graph units from the picture's corner. */
+export type NodesState = { path: string; box: number; zoom: number; x: number; y: number; error?: string }
 
 /** A mod the panel can track: its folder (forward slashes) and its mod.json name. */
 export type ModChoice = {
@@ -322,6 +343,8 @@ declare module 'claude-code' {
       quest: Shaped<QuestDraft>
       /** The conflict check's last report and whether a scan is running. */
       conflicts: Shaped<{ report?: ConflictReport; isScanning: boolean; collection: string; onlyYours: boolean }>
+      /** The Blueprint paste shown as nodes, in the dashboard and in its own pane. */
+      nodes: Shaped<NodesState>
     }
   }
 }
