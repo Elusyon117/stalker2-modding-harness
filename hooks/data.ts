@@ -121,6 +121,9 @@ export async function listPastes($: Engine, modRoot: string, limit = 6): Promise
     }
     const lint = await report($, `${base}.lint.json`)
     const cmp = await report($, `${base}.compare.json`)
+    const meta = await readJson($, `${base}.meta.json`)
+    const asset = typeof meta?.asset === 'string' ? meta.asset : ''
+    const cmpMs = entries.find(e => e.name === `${f.name.slice(0, -4)}.compare.json`)?.mtimeMs
     const viewMs = entries.find(e => e.name === `${f.name.slice(0, -4)}.view.json`)?.mtimeMs
     // the picture is drawn from the paste and the names in <paste>.meta.json: newer than both, or redrawn
     const srcMs = Math.max(f.mtimeMs, entries.find(e => e.name === `${f.name.slice(0, -4)}.meta.json`)?.mtimeMs ?? 0)
@@ -128,6 +131,8 @@ export async function listPastes($: Engine, modRoot: string, limit = 6): Promise
       path, name: f.name.slice(0, -4), mtimeMs: f.mtimeMs, nodes,
       lint: lint.status, lintText: lint.text, compare: cmp.status, compareText: cmp.text,
       view: viewMs === undefined ? 'none' : viewMs >= srcMs ? 'fresh' : 'stale',
+      target: asset ? { asset, graph: typeof meta?.graph === 'string' && meta.graph ? meta.graph : 'EventGraph' } : undefined,
+      compareFresh: cmpMs !== undefined && cmpMs >= f.mtimeMs,
     })
   }
   return out

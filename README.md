@@ -140,7 +140,7 @@ copy, features done, conflicts). Pick one to open its page.
 
 | Command | Opens |
 |---|---|
-| `/zonecraft-panel` | The dashboard: All mods, each mod's page, Blueprint pastes with **Copy** and **Show nodes** |
+| `/zonecraft-panel` | The dashboard: All mods, each mod's page, Blueprint pastes with **Copy**, **Show nodes**, **Open graph**, **Pasted it: check** and **Fix it** |
 | `/zonecraft-newmod` | The New mod form |
 | `/zonecraft-quest` | The Quest designer |
 | `/zonecraft-data` | The Game data browser |

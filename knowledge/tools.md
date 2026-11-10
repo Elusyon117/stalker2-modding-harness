@@ -30,6 +30,7 @@ folder) live outside every repo: `tools/config.json` has only generic defaults, 
 | `tools/editor/set_bp_default.py` | either | one class-default value (`BP`, `PROP`, `VALUE`) |
 | `tools/editor/dump_imc.py` | either | mapping-context rows, mappable names, modifiers, triggers → JSON |
 | `tools/editor/export_t3d.py` | open editor | full T3D export of any asset (read Blueprints back) |
+| `tools/editor/open_graph.py` | open editor | opens `ASSET` and brings graph `GRAPH` forward (the panel's Open graph) |
 | `tools/editor/create_marker.py` | headless | permanent compatibility marker asset |
 | `tools/blueprints/bp_t3d.py`, `bp_graph.py` | library | write Blueprint paste text (nodes, pins, both-ended links, comment boxes, layout) |
 | `tools/blueprints/bp_nodes.py` | library | ready-made nodes on `bp_graph`: events, input actions, calls, variables, Branch, Sequence, Delay, loops, casts, delegates |

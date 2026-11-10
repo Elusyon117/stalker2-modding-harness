@@ -7,6 +7,7 @@ import { age, chooseMod, dashboard, findModRoot, knownMods, readSettings } from 
 import { conflictsSessionStart, registerConflicts } from './conflicts'
 import { dataSessionStart, registerData } from './databrowser'
 import { newModSessionStart, registerNewMod } from './newmod'
+import { BUSY_NONE, checkPaste, fixPrompt, openGraph } from './pastes'
 import { hideNodes, NODES_NONE, nodesBody, registerNodes, showNodes } from './pasteview'
 import { questSessionStart, registerQuest } from './questform'
 import { action, ORANGE, RUST, scene, section, top } from './theme'
@@ -26,6 +27,8 @@ const conflictState = atom({ plugin: 'zonecraft', key: 'conflicts' } as const,
   { shape: 'conflicts-1' })
 // The paste shown as nodes (pasteview.tsx keeps it).
 const nodesShown = atom({ plugin: 'zonecraft', key: 'nodes' } as const, NODES_NONE, { shape: 'nodes-1' })
+// A paste button at work (pastes.ts keeps it).
+const pasteBusy = atom({ plugin: 'zonecraft', key: 'pasteBusy' } as const, BUSY_NONE, { shape: 'pasteBusy-1' })
 const view = atom({ plugin: 'zonecraft', key: 'view' } as const, 'auto' as 'auto' | 'mods' | 'mod', { shape: 'view-1' })
 
 // Kept across sessions in $.store: the mod folders sessions were opened in, and the mod last picked in the panel.
@@ -294,6 +297,12 @@ export const register: Register = on => {
     const shownNodes = await read($, nodesShown)
     const nodesPaste = d.pastes.find(p => p.path === shownNodes.path)
     const nodesView = nodesPaste ? await nodesBody($, e, els, shownNodes, false) : null
+    const busyNow = await read($, pasteBusy)
+    const redraw = () => update($, tick, n => n + 1)
+    // Pasted and checked in the editor (after its last change): folded into Done.
+    const isDone = (p: Paste) => p.compareFresh && p.compare === 'ok'
+    const waiting = d.pastes.filter(p => !isDone(p))
+    const done = d.pastes.filter(isDone)
 
     const pasteRow = (p: Paste) => {
       const isCopied = last.path === p.path && now - last.atMs < 60_000
@@ -303,6 +312,9 @@ export const register: Register = on => {
         if (done.isCopied) await update($, copied, () => ({ path: p.path, atMs: Date.now() }))
         else await $.ui.toast(`Could not copy ${p.name}: ${done.reason ?? 'no clipboard'}`)
       }
+      const root = d.modRoot ?? ''
+      const isBusy = busyNow.path === p.path && busyNow.what !== ''
+      const needsFix = p.lint === 'bad' || (p.compareFresh && p.compare === 'bad')
       return (
         <Box flexDirection="column" key={`paste:${p.name}`}>
           <Box flexDirection="row" gap={1}>
@@ -313,11 +325,20 @@ export const register: Register = on => {
               ? <Button key={`hide:${p.name}`} dimColor onPress={() => void hideNodes($)}>Hide nodes</Button>
               : <Button key={`nodes:${p.name}`} dimColor onPress={() => void showNodes($, p.path, p.view === 'fresh')}>Show nodes</Button>}
           </Box>
+          {p.target
+            ? (
+              <Box flexDirection="row" gap={1} paddingLeft={2}>
+                <Text color={ORANGE}>→</Text>
+                <Text>{`${p.target.asset.slice(p.target.asset.lastIndexOf('/') + 1)} › ${p.target.graph}`}</Text>
+                <Button key={`open:${p.name}`} dimColor onPress={() => void openGraph($, root, p)}>Open graph</Button>
+              </Box>
+            )
+            : null}
           <Box flexDirection="row" gap={1} paddingLeft={2}>
             <Text color={COLOR[p.lint]}>{MARK[p.lint]}</Text>
             <Text dimColor>{p.lint === 'none' ? 'not checked' : `check: ${p.lintText}`}</Text>
           </Box>
-          {p.compare !== 'none'
+          {p.compare !== 'none' && p.compareFresh
             ? (
               <Box flexDirection="row" gap={1} paddingLeft={2}>
                 <Text color={COLOR[p.compare]}>{MARK[p.compare]}</Text>
@@ -325,6 +346,22 @@ export const register: Register = on => {
               </Box>
             )
             : null}
+          {isBusy
+            ? <Box paddingLeft={2}><Text color={ORANGE}>{busyNow.what === 'check' ? 'Checking in the editor…' : 'Opening the graph…'}</Text></Box>
+            : (p.target && p.lint !== 'bad') || needsFix
+              ? (
+                <Box flexDirection="row" gap={1} paddingLeft={2}>
+                  {p.target && p.lint !== 'bad'
+                    ? action(els, `check:${p.name}`, p.compareFresh ? 'Check again' : 'Pasted it: check',
+                      () => void checkPaste($, root, p, redraw))
+                    : null}
+                  {needsFix
+                    ? action(els, `fix:${p.name}`, 'Fix it',
+                      async () => void $.prompt.submit({ text: await fixPrompt($, p), asUser: true }))
+                    : null}
+                </Box>
+              )
+              : null}
           {p === nodesPaste && p.view !== 'fresh'
             ? (
               <Box flexDirection="row" gap={1} paddingLeft={2}>
@@ -339,14 +376,28 @@ export const register: Register = on => {
       )
     }
 
-    const pastes = section(els, 'pastes', 'Blueprint pastes', undefined,
+    const doneRow = (p: Paste) => (
+      <Box flexDirection="row" gap={1} paddingLeft={2} key={`done:${p.name}`}>
+        <Text color="success">✓</Text>
+        <Text>{p.name}</Text>
+        <Text dimColor>{`${p.nodes} nodes · all arrived · ${age(p.mtimeMs, now)}`}</Text>
+        <Button key={`copy-done:${p.name}`} dimColor onPress={async press => {
+          const done = await $.ui.copy({ text: await $.fs.read(p.path), surface: press.surface as never })
+          if (!done.isCopied) await $.ui.toast(`Could not copy ${p.name}: ${done.reason ?? 'no clipboard'}`)
+        }}>Copy</Button>
+      </Box>
+    )
+    const pastes = section(els, 'pastes', 'Blueprint pastes',
+      waiting.length ? 'Waiting to be pasted first; pasted and checked ones fold into Done.' : undefined,
       d.pastes.length === 0
         ? <Text dimColor>None yet. Paste text Claude writes to zonekit/paste/ shows up here with a Copy button.</Text>
         : null,
-      ...d.pastes.map(pasteRow),
-      d.pastes.length > 0
-        ? <Text dimColor>Copy, click into the Blueprint graph in the Zone Kit, press Ctrl+V, then Compile and Save.</Text>
-        : null)
+      ...waiting.map(pasteRow),
+      waiting.length > 0
+        ? <Text dimColor wrap="wrap">Copy, Open graph, click into the graph and press Ctrl+V, wire the pins listed, then Compile, Save and Pasted it: check.</Text>
+        : null,
+      done.length ? <Text bold color="success" key="done-head">{`Done (${done.length})`}</Text> : null,
+      ...done.map(doneRow))
 
     // One blank line between sections, none inside one.
     return (

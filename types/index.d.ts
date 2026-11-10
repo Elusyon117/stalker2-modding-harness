@@ -12,7 +12,14 @@ export type Paste = {
   compareText: string
   /** <paste>.view.json, the nodes picture paste_view.py draws: missing, newer than the paste, or older. */
   view: 'none' | 'fresh' | 'stale'
+  /** Where it goes, from <paste>.meta.json (Graph.write): the Blueprint's path and the graph's name. */
+  target?: { asset: string; graph: string }
+  /** The editor check (compare) ran after the paste was last written: its result is about this paste. */
+  compareFresh: boolean
 }
+
+/** A paste button at work: checking it in the editor or opening its graph ('' for none). */
+export type PasteBusy = { path: string; what: '' | 'check' | 'open' }
 
 /** One picture of <paste>.view.json: a comment box (or the nodes in none), in graph units. */
 export type PasteViewPart = {
@@ -345,6 +352,8 @@ declare module 'claude-code' {
       conflicts: Shaped<{ report?: ConflictReport; isScanning: boolean; collection: string; onlyYours: boolean }>
       /** The Blueprint paste shown as nodes, in the dashboard and in its own pane. */
       nodes: Shaped<NodesState>
+      /** A paste being checked in the editor or having its graph opened. */
+      pasteBusy: Shaped<PasteBusy>
     }
   }
 }

@@ -20,8 +20,14 @@ of 20-200 nodes (event graphs and anim graphs).
    Then run `verify_paste.py lint <file>` (no editor): duplicate names / pin ids, one-sided links, calls the editor
    drops or prunes silently, and the list of external links the tester has to wire by hand. It also writes
    `<paste>.view.json` (`paste_view.py`): the dashboard's Show nodes draws it, one comment box at a time, as the
-   graph editor will show it, with the hand-wired links as dashed orange stubs. Name their far ends in
-   `<paste>.meta.json`, `{"external": {"K2Node_CallFunction_77": "Stop Healing"}}`, or they show the node's class.
+   graph editor will show it, with the hand-wired links as dashed orange stubs.
+   Write the paste with `graph.write(path, asset="/<Mod>/.../BP_X", graph="EventGraph", external={...})`: beside the
+   text it puts `<paste>.meta.json` with the target and the names of the nodes outside the paste
+   (`{"K2Node_CallFunction_77": "Stop Healing"}`; without them the stubs show the node's class). In the dashboard the
+   target gives the paste **Open graph** (`tools/editor/open_graph.py` through `ue_exec.py`: opens the Blueprint and
+   tries to bring the graph's tab forward; the toast says which tab to click when it cannot) and **Pasted it: check**
+   (`verify_paste.py compare --asset`, editor open with remote execution). A paste whose check finds every node folds
+   into **Done**; a failed lint or check shows **Fix it**, which sends Claude the paste, its target and the details.
 3. Put it on the clipboard (`Set-Clipboard -Value (Get-Content <file> -Raw)`), the tester clicks into the graph and
    presses Ctrl+V, then wires only the 1-3 pins that connect to nodes outside the block. **Links to nodes that are
    not in the paste are dropped**, so keep external wiring minimal and name those pins exactly.

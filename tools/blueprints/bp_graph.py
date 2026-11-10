@@ -65,6 +65,20 @@ class Graph:
     def box(self, name, x, y, w, h, text):
         self.boxes.append([name, x, y, w, h, text])
 
+    def write(self, path, asset=None, graph="EventGraph", external=None):
+        """Writes the paste text to `path` and, beside it, <paste>.meta.json: the Blueprint and graph it goes in
+        (the panel's Open graph and Pasted it: check use them) and readable names for nodes outside the paste
+        ({"K2Node_CallFunction_77": "Stop Healing"}, the ends of the wires the tester draws by hand)."""
+        import json
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write("\n".join(self.text()))
+        meta = {k: v for k, v in (("asset", asset), ("graph", graph if asset else None),
+                                  ("external", external)) if v}
+        base = path[:-4] if path.lower().endswith(".txt") else path
+        if meta:
+            with open(base + ".meta.json", "w", encoding="utf-8") as f:
+                json.dump(meta, f, indent=1)
+
     def text(self):
         out = list(self.extra)
         for b in self.boxes:

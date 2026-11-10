@@ -246,3 +246,71 @@ test('a picture older than the paste or its names is drawn again: errors show, R
     dir.pop()
   }
 })
+
+test('a paste with a target opens its graph, checks itself in the editor and asks Claude to fix what is missing', async ($, on) => {
+  const dir = DIRS[`${MOD}/zonekit/paste`]
+  const meta = `${MOD}/zonekit/paste/seat_tick.meta.json`
+  const cmp = `${MOD}/zonekit/paste/seat_tick.compare.json`
+  FILES[meta] = '{"asset": "/MyMod/Runtime/BP_Seat", "graph": "EventGraph"}'
+  FILES[cmp] = '{"ok": false, "summary": "1 node(s) missing, 0 with fewer links", "details": ["MISSING x1: Branch (every 2 s)"]}'
+  dir.push({ name: 'seat_tick.meta.json', kind: 'file', mtimeMs: NOW - 3 * MIN })
+  fakePc(on, { cwd: MOD })
+  const runs: { argv: string[]; env?: Record<string, string> }[] = []
+  const toasts: string[] = []
+  const prompts: string[] = []
+  on('process.run', (_, e) => {
+    runs.push({ argv: [...e.argv], env: e.init?.env })
+    if (e.argv.includes('compare')) dir.push({ name: 'seat_tick.compare.json', kind: 'file', mtimeMs: NOW })
+    return { value: { exitCode: e.argv.includes('compare') ? 1 : 0, stdout: 'OPENED /MyMod/Runtime/BP_Seat\nGRAPH_TAB EventGraph', stderr: '' } }
+  })
+  on('ui.toast', (_, e) => {
+    toasts.push(e.text)
+    return { value: undefined }
+  })
+  on('prompt.submit', (_, e) => {
+    prompts.push(e.text)
+    return { text: e.text }
+  })
+  try {
+    const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    expect((await ui.find({ type: 'Text', text: /BP_Seat › EventGraph/ }))?.text).toBe('BP_Seat › EventGraph')
+    expect(await ui.find({ key: 'fix:seat_tick' })).toBeUndefined()       // an old editor check is not shown
+
+    await ui.press({ key: 'open:seat_tick' })
+    expect(runs[0].argv.some(a => a.endsWith('tools/editor/ue_exec.py'))).toBe(true)
+    expect(runs[0].argv).toContain('ASSET=/MyMod/Runtime/BP_Seat')
+    expect(runs[0].env?.ZONECRAFT_MOD_DIR).toBe(MOD)
+    expect(toasts[0]).toContain('click its EventGraph tab')
+
+    await ui.press({ key: 'check:seat_tick' })
+    expect(runs[1].argv.slice(-6)).toEqual(['compare', `${MOD}/zonekit/paste/seat_tick.txt`, '--asset', '/MyMod/Runtime/BP_Seat', '--graph', 'EventGraph'])
+    expect((await ui.find({ type: 'Text', text: /in the editor/ }))?.text).toContain('1 node(s) missing')
+    await ui.press({ key: 'fix:seat_tick' })
+    expect(prompts[0]).toContain('MISSING x1: Branch (every 2 s)')
+    expect(prompts[0]).toContain('/MyMod/Runtime/BP_Seat › EventGraph')
+    await ui.unmount()
+  } finally {
+    while (dir.length > 3) dir.pop()
+    delete FILES[meta]
+    delete FILES[cmp]
+  }
+})
+
+test('a paste checked in the editor with every node there folds into Done', async ($, on) => {
+  const dir = DIRS[`${MOD}/zonekit/paste`]
+  const cmp = `${MOD}/zonekit/paste/seat_tick.compare.json`
+  FILES[cmp] = '{"ok": true, "summary": "every node arrived with its links"}'
+  dir.push({ name: 'seat_tick.compare.json', kind: 'file', mtimeMs: NOW })
+  fakePc(on, { cwd: MOD })
+  try {
+    const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+    expect((await ui.find({ type: 'Text', text: /^Done/ }))?.text).toBe('Done (1)')
+    expect((await ui.find({ type: 'Text', text: /all arrived/ }))?.text).toBe('2 nodes · all arrived · 2 min ago')
+    expect(await ui.find({ key: 'copy:seat_tick' })).toBeUndefined()
+    expect(await ui.find({ key: 'copy-done:seat_tick' })).toBeDefined()
+    await ui.unmount()
+  } finally {
+    dir.pop()
+    delete FILES[cmp]
+  }
+})

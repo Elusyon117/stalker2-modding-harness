@@ -95,5 +95,21 @@ class PasteView(unittest.TestCase):
             self.assertEqual(view["hand"], ["Branch (only while seated) › false → Stop Healing"])
 
 
+class GraphWrite(unittest.TestCase):
+    def test_paste_and_its_target_beside_it(self):
+        g = Graph()
+        Nodes(g, self_class="/MyMod/Runtime/BP_MyActor.BP_MyActor_C").event_tick()
+        with tempfile.TemporaryDirectory() as d:
+            paste = os.path.join(d, "tick.txt")
+            g.write(paste, asset="/MyMod/Runtime/BP_MyActor", external={"K2Node_CallFunction_7": "Stop Healing"})
+            with open(paste, encoding="utf-8") as f:
+                self.assertEqual([n["klass"] for n in P.parse(f.read())[0]], ["K2Node_Event"])
+            with open(os.path.join(d, "tick.meta.json"), encoding="utf-8") as f:
+                self.assertEqual(json.load(f), {"asset": "/MyMod/Runtime/BP_MyActor", "graph": "EventGraph",
+                                                "external": {"K2Node_CallFunction_7": "Stop Healing"}})
+            g.write(os.path.join(d, "bare.txt"))           # no target, no names: no meta file
+            self.assertFalse(os.path.exists(os.path.join(d, "bare.meta.json")))
+
+
 if __name__ == "__main__":
     unittest.main()
